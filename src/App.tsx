@@ -15,6 +15,10 @@ import ServicosLanding from "./pages/servicos/Landing";
 import ServicosAuth from "./pages/servicos/Auth";
 import ServicosFeed from "./pages/servicos/Feed";
 import ServicosChat from "./pages/servicos/Chat";
+import ServicosOfertantes from "./pages/servicos/Ofertantes";
+import ServicosAssinatura from "./pages/servicos/Assinatura";
+import ServicosPerfil from "./pages/servicos/Perfil";
+import ServicosAdmin from "./pages/servicos/Admin";
 import { DebugErrorThrower } from "./components/DebugErrorThrower";
 import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
 
