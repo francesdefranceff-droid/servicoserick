@@ -11,6 +11,9 @@ import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
 import Social from "./pages/Social";
 import NotFound from "./pages/NotFound";
+import ServicosLanding from "./pages/servicos/Landing";
+import ServicosAuth from "./pages/servicos/Auth";
+import ServicosFeed from "./pages/servicos/Feed";
 import { DebugErrorThrower } from "./components/DebugErrorThrower";
 import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
 
@@ -31,6 +34,9 @@ const App = () => (
       <Route path="/social" element={<Social />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/servicos" element={<ServicosLanding />} />
+      <Route path="/servicos/auth" element={<ServicosAuth />} />
+      <Route path="/servicos/home" element={<ServicosFeed />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
