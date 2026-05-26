@@ -249,7 +249,7 @@ export default function ServicosFeed() {
         >
           <Plus className="w-7 h-7" />
         </button>
-        <button className="flex flex-col items-center text-gray-500 text-xs">
+        <button onClick={() => navigate('/servicos/chat')} className="flex flex-col items-center text-gray-500 text-xs">
           <MessageCircle className="w-5 h-5 mb-0.5" />Mensagens
         </button>
         <button className="flex flex-col items-center text-gray-500 text-xs">
