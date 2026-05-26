@@ -113,7 +113,7 @@ export const ErrorDebugPopup: React.FC = () => {
   const [images, setImages] = useState<AttachedImage[]>([]);
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const docInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -482,7 +482,7 @@ export const ErrorDebugPopup: React.FC = () => {
   return (
     <div
       style={panelStyle}
-      className="bg-background border border-border rounded-md shadow-2xl flex flex-col overflow-hidden"
+      className="bg-background border border-border rounded-md shadow-2xl flex flex-col overflow-hidden max-w-[calc(100vw-2rem)]"
       role="dialog"
       aria-label="Debug Tool"
       onDrop={onDrop}
