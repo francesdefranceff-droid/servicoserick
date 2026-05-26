@@ -159,7 +159,7 @@ export default function ServicosFeed() {
             <a className="hover:underline cursor-pointer">Ofertantes</a>
             <button onClick={() => setOpen(true)} className="hover:underline">Demanda +</button>
             <a className="hover:underline cursor-pointer">Assinatura</a>
-            <a className="hover:underline cursor-pointer">Mensagens</a>
+            <button onClick={() => navigate('/servicos/chat')} className="hover:underline">Mensagens</button>
           </nav>
           <Button onClick={logout} variant="ghost" size="sm" className="text-white hover:bg-green-700">
             Sair
@@ -249,7 +249,7 @@ export default function ServicosFeed() {
         >
           <Plus className="w-7 h-7" />
         </button>
-        <button className="flex flex-col items-center text-gray-500 text-xs">
+        <button onClick={() => navigate('/servicos/chat')} className="flex flex-col items-center text-gray-500 text-xs">
           <MessageCircle className="w-5 h-5 mb-0.5" />Mensagens
         </button>
         <button className="flex flex-col items-center text-gray-500 text-xs">
