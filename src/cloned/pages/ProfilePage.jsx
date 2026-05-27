@@ -36,6 +36,75 @@ export default function ProfilePage() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [savingCategories, setSavingCategories] = useState(false);
   const [activeTab, setActiveTab] = useState('presentation');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const avatarInputRef = useRef(null);
+  const photoInputRef = useRef(null);
+
+  const fetchPhotos = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase.storage
+      .from('svc-photos')
+      .list(`${user.id}/gallery`, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) return;
+    const urls = (data || []).filter(f => f.name && !f.name.startsWith('.')).map(f => {
+      const { data: u } = supabase.storage.from('svc-photos').getPublicUrl(`${user.id}/gallery/${f.name}`);
+      return { name: f.name, url: u.publicUrl };
+    });
+    setPhotos(urls);
+  };
+
+  useEffect(() => { fetchPhotos(); }, [user?.id]);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('svc-photos').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('svc-photos').getPublicUrl(path);
+      await updateSvcProfile(user.id, { avatar_url: pub.publicUrl });
+      await refreshUser?.();
+      toast.success('Foto de perfil atualizada!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar foto');
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${user.id}/gallery/photo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('svc-photos').upload(path, file);
+      if (upErr) throw upErr;
+      toast.success('Foto adicionada!');
+      fetchPhotos();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar foto');
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = '';
+    }
+  };
+
+  const deletePhoto = async (name) => {
+    if (!user?.id) return;
+    const { error } = await supabase.storage.from('svc-photos').remove([`${user.id}/gallery/${name}`]);
+    if (error) toast.error('Erro ao excluir');
+    else { toast.success('Foto removida'); fetchPhotos(); }
+  };
 
   useEffect(() => {
     fetchUserProfile();
