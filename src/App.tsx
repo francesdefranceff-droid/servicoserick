@@ -20,6 +20,8 @@ import ServicosOfertantes from "./pages/servicos/Ofertantes";
 import ServicosAssinatura from "./pages/servicos/Assinatura";
 import ServicosPerfil from "./pages/servicos/Perfil";
 import ServicosAdmin from "./pages/servicos/Admin";
+import { DebugErrorThrower } from "./components/DebugErrorThrower";
+import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
 import { ClonedAuthProvider, clonedRoutes } from "./cloned/ClonedRoutes";
 import { AuthContext as ClonedAuthContext } from "./cloned/ClonedAuthContext";
 
@@ -53,7 +55,11 @@ const AppRoutes = () => {
 
 const App = () => (
   <TooltipProvider>
+    {/* DebugErrorThrower DEVE ficar fora de qualquer ErrorBoundary/Suspense
+        para que o erro intencional escape até o overlay global da Lovable. */}
+    <DebugErrorThrower />
     <ClonedAuthProvider>
+      <ErrorDebugPopup />
       <Toaster />
       <Sonner />
       <AppRoutes />
