@@ -72,6 +72,74 @@ export default function DirectChatPage() {
   const [payDescription, setPayDescription] = useState('');
   const [pixCharge, setPixCharge] = useState(null); // {brcode, qr_code_base64}
   const [loadingAction, setLoadingAction] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingNote, setRatingNote] = useState('');
+
+  // ====== Local conversation flags (pinned/archived/blocked) ======
+  const convKey = userId || 'unknown';
+  const readFlag = (k) => {
+    try { return JSON.parse(localStorage.getItem(`dc:${k}`) || '{}'); } catch { return {}; }
+  };
+  const writeFlag = (k, obj) => localStorage.setItem(`dc:${k}`, JSON.stringify(obj));
+  const [pinnedMap, setPinnedMap] = useState(() => readFlag('pinned'));
+  const [archivedMap, setArchivedMap] = useState(() => readFlag('archived'));
+  const [blockedMap, setBlockedMap] = useState(() => readFlag('blocked'));
+  const isPinned = !!pinnedMap[convKey];
+  const isArchived = !!archivedMap[convKey];
+  const isBlocked = !!blockedMap[convKey];
+
+  const togglePin = () => {
+    const next = { ...pinnedMap, [convKey]: !isPinned };
+    if (!next[convKey]) delete next[convKey];
+    setPinnedMap(next); writeFlag('pinned', next);
+    toast.success(isPinned ? 'Conversa desafixada' : 'Conversa fixada');
+    setActiveModal(null);
+  };
+  const toggleArchive = () => {
+    const next = { ...archivedMap, [convKey]: !isArchived };
+    if (!next[convKey]) delete next[convKey];
+    setArchivedMap(next); writeFlag('archived', next);
+    toast.success(isArchived ? 'Conversa desarquivada' : 'Conversa arquivada');
+    setActiveModal(null);
+  };
+  const toggleBlock = () => {
+    const next = { ...blockedMap, [convKey]: !isBlocked };
+    if (!next[convKey]) delete next[convKey];
+    setBlockedMap(next); writeFlag('blocked', next);
+    if (!isBlocked) { setCanChat(false); setChatRestrictionReason('Você bloqueou este usuário.'); }
+    else { setCanChat(true); setChatRestrictionReason(''); }
+    toast.warning(isBlocked ? 'Usuário desbloqueado' : 'Usuário bloqueado');
+    setActiveModal(null);
+  };
+  const handleReport = () => {
+    const reports = readFlag('reports');
+    reports[convKey] = { at: new Date().toISOString() };
+    writeFlag('reports', reports);
+    toast.warning('Usuário reportado. Nossa equipe vai analisar.');
+    setActiveModal(null);
+  };
+  const handleShareConversation = async () => {
+    const url = `${window.location.origin}/direct-chat/${userId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Conversa', url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copiado!');
+      }
+    } catch { /* user cancelled */ }
+    setActiveModal(null);
+  };
+  const openRating = () => { setRatingValue(0); setRatingNote(''); setActiveModal('rate'); };
+  const submitRating = async () => {
+    if (!ratingValue) { toast.error('Selecione uma nota'); return; }
+    try {
+      await sendSystemMessage(`⭐ Avaliação: ${ratingValue}/5${ratingNote ? `\n📝 ${ratingNote}` : ''}`);
+      toast.success('Avaliação enviada!');
+    } catch { toast.error('Erro ao avaliar'); }
+    setActiveModal(null);
+  };
+
 
   // ====== Action handlers ======
   const handleRefuse = async () => {
@@ -749,15 +817,16 @@ export default function DirectChatPage() {
                 </div>
 
                 <div className="mt-6 space-y-1 border-t pt-4">
-                  <PanelLink icon={<Share2 size={16} />} label="Compartilhar perfil" onClick={() => toast.info('Compartilhar')} testid="share-profile" />
-                  <PanelLink icon={<Pin size={16} />} label="Fixar conversa" onClick={() => toast.info('Conversa fixada')} testid="pin-conversation" />
-                  <PanelLink icon={<Archive size={16} />} label="Arquivar conversa" onClick={() => toast.info('Conversa arquivada')} testid="archive-conversation" />
+                  <PanelLink icon={<Share2 size={16} />} label="Compartilhar perfil" onClick={handleShareConversation} testid="share-profile" />
+                  <PanelLink icon={<Pin size={16} />} label={isPinned ? 'Desafixar conversa' : 'Fixar conversa'} onClick={togglePin} testid="pin-conversation" />
+                  <PanelLink icon={<Archive size={16} />} label={isArchived ? 'Desarquivar conversa' : 'Arquivar conversa'} onClick={toggleArchive} testid="archive-conversation" />
                 </div>
 
                 <div className="mt-4 space-y-1 border-t pt-4">
-                  <PanelLink danger icon={<Flag size={16} />} label="Reportar perfil" onClick={() => toast.warning('Perfil reportado')} testid="report-profile" />
-                  <PanelLink danger icon={<Ban size={16} />} label="Bloquear" onClick={() => toast.warning('Usuário bloqueado')} testid="block-user" />
+                  <PanelLink danger icon={<Flag size={16} />} label="Reportar perfil" onClick={handleReport} testid="report-profile" />
+                  <PanelLink danger icon={<Ban size={16} />} label={isBlocked ? 'Desbloquear' : 'Bloquear'} onClick={toggleBlock} testid="block-user" />
                 </div>
+
               </>
             ) : (
               <div className="text-center text-sm text-gray-400 py-10">Carregando perfil...</div>
@@ -898,16 +967,46 @@ export default function DirectChatPage() {
       {activeModal === 'more' && (
         <ModalShell title="Mais opções" onClose={() => setActiveModal(null)}>
           <div className="space-y-1">
-            <MoreOption icon={<StarIcon size={18} className="text-amber-500" />} label="Avaliar este profissional" onClick={() => { toast.info('Avaliação em breve'); setActiveModal(null); }} />
-            <MoreOption icon={<Share2 size={18} className="text-blue-500" />} label="Compartilhar conversa" onClick={() => { toast.info('Compartilhamento copiado'); setActiveModal(null); }} />
-            <MoreOption icon={<Pin size={18} className="text-purple-500" />} label="Fixar conversa" onClick={() => { toast.success('Conversa fixada'); setActiveModal(null); }} />
-            <MoreOption icon={<Archive size={18} className="text-gray-500" />} label="Arquivar conversa" onClick={() => { toast.success('Conversa arquivada'); setActiveModal(null); }} />
+            <MoreOption icon={<StarIcon size={18} className="text-amber-500" />} label="Avaliar este profissional" onClick={openRating} />
+            <MoreOption icon={<Share2 size={18} className="text-blue-500" />} label="Compartilhar conversa" onClick={handleShareConversation} />
+            <MoreOption icon={<Pin size={18} className="text-purple-500" />} label={isPinned ? 'Desafixar conversa' : 'Fixar conversa'} onClick={togglePin} />
+            <MoreOption icon={<Archive size={18} className="text-gray-500" />} label={isArchived ? 'Desarquivar conversa' : 'Arquivar conversa'} onClick={toggleArchive} />
             <div className="my-2 border-t border-gray-100" />
-            <MoreOption icon={<Flag size={18} className="text-red-500" />} label="Reportar usuário" danger onClick={() => { toast.warning('Usuário reportado'); setActiveModal(null); }} />
-            <MoreOption icon={<Ban size={18} className="text-red-500" />} label="Bloquear usuário" danger onClick={() => { toast.warning('Usuário bloqueado'); setActiveModal(null); }} />
+            <MoreOption icon={<Flag size={18} className="text-red-500" />} label="Reportar usuário" danger onClick={handleReport} />
+            <MoreOption icon={<Ban size={18} className="text-red-500" />} label={isBlocked ? 'Desbloquear usuário' : 'Bloquear usuário'} danger onClick={toggleBlock} />
           </div>
         </ModalShell>
       )}
+
+      {activeModal === 'rate' && (
+        <ModalShell title="Avaliar profissional" onClose={() => setActiveModal(null)}>
+          <div className="flex justify-center gap-1 mb-4">
+            {[1,2,3,4,5].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRatingValue(n)}
+                className="p-1"
+                aria-label={`${n} estrelas`}
+              >
+                <StarIcon size={32} className={n <= ratingValue ? 'text-amber-500 fill-amber-500' : 'text-gray-300'} />
+              </button>
+            ))}
+          </div>
+          <Textarea
+            value={ratingNote}
+            onChange={(e) => setRatingNote(e.target.value.slice(0, 240))}
+            placeholder="Conte como foi sua experiência (opcional)"
+            rows={3}
+            className="resize-none border-gray-300 rounded-xl text-sm"
+          />
+          <div className="flex gap-2 mt-5">
+            <button onClick={() => setActiveModal(null)} className="flex-1 h-11 rounded-full border border-gray-300 font-medium hover:bg-gray-50">Cancelar</button>
+            <button onClick={submitRating} disabled={!ratingValue} className="flex-1 h-11 rounded-full bg-amber-500 text-white font-semibold hover:bg-amber-600 disabled:opacity-60">Enviar avaliação</button>
+          </div>
+        </ModalShell>
+      )}
+
 
       {/* ===== MOBILE BOTTOM NAV (only mobile) ===== */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-2 py-2 flex items-end justify-around" data-testid="mobile-bottom-nav">
