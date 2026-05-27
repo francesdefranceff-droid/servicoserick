@@ -38,7 +38,7 @@ export default function LandingPage() {
                 <span className="text-green-500">Wati</span>
                 <span className="text-orange-500">zat</span>
               </span>
-              <span className="text-[10px] text-gray-500 uppercase tracking-wide">{t('landingTagline') || 'Apoio para Migrantes'}</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wide">Trabalho em Goiás</span>
             </div>
           </div>
           <div className="flex items-center space-x-3">
