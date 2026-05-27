@@ -65,7 +65,7 @@ const JOB_PLATFORMS = [
     id: 'gupy',
     name: 'Gupy',
     logo: '🟣',
-    color: 'bg-purple-600',
+    color: 'bg-orange-600',
     baseUrl: 'https://portal.gupy.io/job-search',
     searchParam: 'name',
     locationParam: 'city',
@@ -321,7 +321,7 @@ export default function JobsPage() {
           </div>
 
           {/* Barra de Pesquisa Principal */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 mb-4">
+          <div className="bg-gradient-to-r from-blue-600 to-orange-600 rounded-2xl p-4 mb-4">
             <p className="text-white text-sm mb-3 font-medium">🔍 Busque vagas em todas as plataformas</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
@@ -389,7 +389,7 @@ export default function JobsPage() {
               onClick={() => setViewMode('platforms')}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 viewMode === 'platforms'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-orange-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -508,7 +508,7 @@ export default function JobsPage() {
                               onError={(e) => { e.target.style.display = 'none'; }}
                             />
                           ) : (
-                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-orange-600 flex items-center justify-center text-white text-xl font-bold">
                               {job.company?.charAt(0) || '?'}
                             </div>
                           )}
@@ -900,7 +900,7 @@ export default function JobsPage() {
                         {/* Avatar */}
                         <div className="flex-shrink-0">
                           <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold ${
-                        viewMode === 'offers' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-green-500 to-emerald-600'
+                        viewMode === 'offers' ? 'bg-gradient-to-br from-blue-500 to-orange-600' : 'bg-gradient-to-br from-green-500 to-emerald-600'
                       }`}>
                         {item.user?.name?.charAt(0) || 'U'}
                       </div>
@@ -985,7 +985,7 @@ export default function JobsPage() {
             🗺️ Mapa de Oportunidades
           </h3>
           <div 
-            className="h-48 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center cursor-pointer hover:from-blue-200 hover:to-indigo-200 transition-all"
+            className="h-48 bg-gradient-to-br from-blue-100 to-orange-100 rounded-xl flex items-center justify-center cursor-pointer hover:from-blue-200 hover:to-orange-200 transition-all"
             onClick={() => navigate('/nearby')}
           >
             <div className="text-center">

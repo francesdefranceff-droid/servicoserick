@@ -20,10 +20,10 @@ const CATEGORY_INFO = {
   food: { icon: '🍽️', label: 'Alimentação', color: 'bg-green-100 text-green-700' },
   legal: { icon: '⚖️', label: 'Jurídico', color: 'bg-blue-100 text-blue-700' },
   health: { icon: '🏥', label: 'Saúde', color: 'bg-red-100 text-red-700' },
-  housing: { icon: '🏠', label: 'Moradia', color: 'bg-purple-100 text-purple-700' },
+  housing: { icon: '🏠', label: 'Moradia', color: 'bg-orange-100 text-orange-700' },
   work: { icon: '💼', label: 'Emprego', color: 'bg-yellow-100 text-yellow-700' },
-  education: { icon: '📚', label: 'Educação', color: 'bg-indigo-100 text-indigo-700' },
-  social: { icon: '🤝', label: 'Social', color: 'bg-pink-100 text-pink-700' },
+  education: { icon: '📚', label: 'Educação', color: 'bg-orange-100 text-orange-700' },
+  social: { icon: '🤝', label: 'Social', color: 'bg-orange-100 text-orange-700' },
   clothes: { icon: '👕', label: 'Roupas', color: 'bg-orange-100 text-orange-700' },
   furniture: { icon: '🪑', label: 'Móveis', color: 'bg-teal-100 text-teal-700' },
   transport: { icon: '🚗', label: 'Transporte', color: 'bg-cyan-100 text-cyan-700' },
@@ -970,7 +970,7 @@ export default function DirectChatPage() {
           <div className="space-y-1">
             <MoreOption icon={<StarIcon size={18} className="text-amber-500" />} label="Avaliar este profissional" onClick={openRating} />
             <MoreOption icon={<Share2 size={18} className="text-blue-500" />} label="Compartilhar conversa" onClick={handleShareConversation} />
-            <MoreOption icon={<Pin size={18} className="text-purple-500" />} label={isPinned ? 'Desafixar conversa' : 'Fixar conversa'} onClick={togglePin} />
+            <MoreOption icon={<Pin size={18} className="text-orange-500" />} label={isPinned ? 'Desafixar conversa' : 'Fixar conversa'} onClick={togglePin} />
             <MoreOption icon={<Archive size={18} className="text-gray-500" />} label={isArchived ? 'Desarquivar conversa' : 'Arquivar conversa'} onClick={toggleArchive} />
             <div className="my-2 border-t border-gray-100" />
             <MoreOption icon={<Flag size={18} className="text-red-500" />} label="Reportar usuário" danger onClick={handleReport} />

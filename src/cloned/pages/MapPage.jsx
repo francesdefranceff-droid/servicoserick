@@ -45,7 +45,7 @@ export default function MapPage() {
   // Cores do mapa baseadas no modo dia/noite
   const mapColors = useMemo(() => ({
     background: isNight 
-      ? 'from-slate-900 via-slate-800 to-indigo-900' 
+      ? 'from-slate-900 via-slate-800 to-orange-900' 
       : 'from-blue-50 via-sky-100 to-blue-200',
     grid: isNight ? '#3b82f6' : '#2563eb',
     streets: isNight ? '#60a5fa' : '#3b82f6',
@@ -218,7 +218,7 @@ export default function MapPage() {
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 ${isNight ? 'bg-slate-900' : 'bg-background'}`} data-testid="map-page">
       {/* Header */}
-      <div className={`bg-gradient-to-r ${isNight ? 'from-blue-900 to-indigo-900' : 'from-blue-600 to-blue-700'} text-white py-4 px-4 sticky top-0 z-20 transition-colors duration-500`}>
+      <div className={`bg-gradient-to-r ${isNight ? 'from-blue-900 to-orange-900' : 'from-blue-600 to-blue-700'} text-white py-4 px-4 sticky top-0 z-20 transition-colors duration-500`}>
         <div className="container mx-auto max-w-6xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl sm:text-2xl font-heading font-bold flex items-center gap-2">
@@ -226,7 +226,7 @@ export default function MapPage() {
               Mapa de Ajuda - Paris
             </h1>
             {/* Indicador Dia/Noite */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${isNight ? 'bg-indigo-800' : 'bg-blue-500'}`}>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${isNight ? 'bg-orange-800' : 'bg-blue-500'}`}>
               {isNight ? <Moon size={16} /> : <Sun size={16} />}
               <span className="text-xs font-medium">{isNight ? 'Modo Noturno' : 'Modo Diurno'}</span>
             </div>

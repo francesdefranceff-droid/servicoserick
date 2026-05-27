@@ -19,7 +19,7 @@ const HERO_IMAGES = [
 
 // Categorias principais (4 no grid)
 const MAIN_CATEGORIES = [
-  { value: 'housing', label: 'Moradia', icon: '🏠', color: 'from-purple-400 to-purple-600' },
+  { value: 'housing', label: 'Moradia', icon: '🏠', color: 'from-orange-400 to-orange-600' },
   { value: 'work', label: 'Trabalho', icon: '💼', color: 'from-yellow-400 to-orange-500' },
   { value: 'food', label: 'Alimentação', icon: '🍽️', color: 'from-green-400 to-green-600' },
   { value: 'education', label: 'Educação', icon: '📚', color: 'from-blue-400 to-blue-600' }
@@ -486,9 +486,9 @@ export default function VolunteersPage() {
             </div>
 
             {/* Upload de Foto */}
-            <div className="bg-purple-50 border-2 border-purple-200 p-3 sm:p-4 rounded-2xl">
+            <div className="bg-orange-50 border-2 border-orange-200 p-3 sm:p-4 rounded-2xl">
               <Label className="text-sm sm:text-base font-bold mb-2 block flex items-center gap-2">
-                <ImageIcon className="text-purple-600 flex-shrink-0" size={18} />
+                <ImageIcon className="text-orange-600 flex-shrink-0" size={18} />
                 <span>Foto (opcional)</span>
               </Label>
               
@@ -615,7 +615,7 @@ export default function VolunteersPage() {
         )}
 
         {/* Mensagem inspiradora */}
-        <div className="mt-8 bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-6 text-center border border-pink-200">
+        <div className="mt-8 bg-gradient-to-br from-orange-50 to-orange-50 rounded-3xl p-6 text-center border border-orange-200">
           <div className="text-4xl mb-3">🌟</div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">
             Sua ajuda faz a diferença

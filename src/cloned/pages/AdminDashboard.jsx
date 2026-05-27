@@ -16,10 +16,10 @@ const CATEGORIES = [
   { value: 'food', label: 'Alimentação', icon: '🍽️', color: 'bg-green-100 text-green-700' },
   { value: 'legal', label: 'Jurídico', icon: '⚖️', color: 'bg-blue-100 text-blue-700' },
   { value: 'health', label: 'Saúde', icon: '🏥', color: 'bg-red-100 text-red-700' },
-  { value: 'housing', label: 'Moradia', icon: '🏠', color: 'bg-purple-100 text-purple-700' },
+  { value: 'housing', label: 'Moradia', icon: '🏠', color: 'bg-orange-100 text-orange-700' },
   { value: 'work', label: 'Emprego', icon: '💼', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'education', label: 'Educação', icon: '📚', color: 'bg-indigo-100 text-indigo-700' },
-  { value: 'social', label: 'Social', icon: '🤝', color: 'bg-pink-100 text-pink-700' },
+  { value: 'education', label: 'Educação', icon: '📚', color: 'bg-orange-100 text-orange-700' },
+  { value: 'social', label: 'Social', icon: '🤝', color: 'bg-orange-100 text-orange-700' },
   { value: 'clothes', label: 'Roupas', icon: '👕', color: 'bg-orange-100 text-orange-700' },
   { value: 'furniture', label: 'Móveis', icon: '🪑', color: 'bg-teal-100 text-teal-700' },
   { value: 'transport', label: 'Transporte', icon: '🚗', color: 'bg-cyan-100 text-cyan-700' }
@@ -407,7 +407,7 @@ export default function AdminDashboard() {
       case 'admin': return 'bg-red-100 text-red-700';
       case 'volunteer': return 'bg-blue-100 text-blue-700';
       case 'migrant': return 'bg-green-100 text-green-700';
-      case 'helper': return 'bg-purple-100 text-purple-700';
+      case 'helper': return 'bg-orange-100 text-orange-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -496,8 +496,8 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mb-3">
-                  <UserX size={20} className="text-purple-600" />
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-3">
+                  <UserX size={20} className="text-orange-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_migrants || 0}</p>
                 <p className="text-sm text-gray-500">Migrantes</p>
@@ -512,16 +512,16 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
-                <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center mb-3">
-                  <MessageCircle size={20} className="text-pink-600" />
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-3">
+                  <MessageCircle size={20} className="text-orange-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_messages || 0}</p>
                 <p className="text-sm text-gray-500">Mensagens</p>
               </div>
 
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center mb-3">
-                  <Link size={20} className="text-indigo-600" />
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-3">
+                  <Link size={20} className="text-orange-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">{stats?.total_matches || 0}</p>
                 <p className="text-sm text-gray-500">Conexões</p>
@@ -865,7 +865,7 @@ export default function AdminDashboard() {
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                         ad.type === 'donation' ? 'bg-orange-100 text-orange-700' :
                         ad.type === 'motivation' ? 'bg-blue-100 text-blue-700' :
-                        'bg-purple-100 text-purple-700'
+                        'bg-orange-100 text-orange-700'
                       }`}>
                         {ad.type === 'donation' ? '💰 Doação' :
                          ad.type === 'motivation' ? '💪 Motivação' :
@@ -960,11 +960,11 @@ export default function AdminDashboard() {
               </div>
               <div className="bg-white rounded-2xl p-4 shadow-sm border">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <CheckCircle size={24} className="text-purple-600" />
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <CheckCircle size={24} className="text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-2xl font-bold text-orange-600">
                       {housingListings.filter(l => l.listing_status === 'matched').length}
                     </p>
                     <p className="text-xs text-gray-500">Conexões Realizadas</p>
@@ -1086,7 +1086,7 @@ export default function AdminDashboard() {
                               value={listing.listing_status || 'active'}
                               onChange={(e) => updateHousingStatus(listing.id, e.target.value)}
                               className={`px-3 py-1 rounded-lg text-xs font-medium border-0 cursor-pointer ${
-                                listing.listing_status === 'matched' ? 'bg-purple-100 text-purple-700' :
+                                listing.listing_status === 'matched' ? 'bg-orange-100 text-orange-700' :
                                 listing.listing_status === 'closed' ? 'bg-gray-100 text-gray-600' :
                                 'bg-green-100 text-green-700'
                               }`}
@@ -1217,7 +1217,7 @@ export default function AdminDashboard() {
 
                 {/* Exchange Services */}
                 {selectedHousing.exchange_services && (
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
                     <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                       🤝 Serviços em Troca
                     </h4>

@@ -157,10 +157,10 @@ export default function HomePage() {
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: Utensils },
     { value: 'legal', label: t('legal'), color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Scale },
     { value: 'health', label: t('health'), color: 'bg-red-100 text-red-700 border-red-200', icon: Heart },
-    { value: 'housing', label: t('housing'), color: 'bg-purple-100 text-purple-700 border-purple-200', icon: HomeIcon },
+    { value: 'housing', label: t('housing'), color: 'bg-orange-100 text-orange-700 border-orange-200', icon: HomeIcon },
     { value: 'work', label: t('work'), color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Briefcase },
-    { value: 'education', label: t('education'), color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: GraduationCap },
-    { value: 'social', label: t('social'), color: 'bg-pink-100 text-pink-700 border-pink-200', icon: Users },
+    { value: 'education', label: t('education'), color: 'bg-orange-100 text-orange-700 border-orange-200', icon: GraduationCap },
+    { value: 'social', label: t('social'), color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Users },
     { value: 'clothes', label: t('clothes'), color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Shirt },
     { value: 'furniture', label: t('furniture'), color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Armchair },
     { value: 'transport', label: t('transport'), color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: Car }
@@ -751,8 +751,8 @@ export default function HomePage() {
               onClick={() => setTypeFilter('job')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0 flex items-center gap-1 ${
                 typeFilter === 'job'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-indigo-50'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-orange-50'
               }`}
             >
               💼 {t('jobVacancies')}
@@ -766,7 +766,7 @@ export default function HomePage() {
           {/* Sidebar Esquerda - Anúncios do Dashboard */}
           <div className="hidden lg:block w-80 flex-shrink-0 space-y-4">
             {/* Header da Sidebar */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-4 shadow-lg">
+            <div className="bg-gradient-to-r from-blue-600 to-orange-600 text-white rounded-2xl p-4 shadow-lg">
               <h3 className="font-bold text-sm">📢 {t('advertisementsTitle')}</h3>
               <p className="text-xs text-white/80 mt-1">{t('jobsAndMessagesDesc')}</p>
             </div>
@@ -880,7 +880,7 @@ export default function HomePage() {
               href="https://rozgarline.me/jobs/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="block bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-4 text-center hover:shadow-lg transition-all"
+              className="block bg-gradient-to-r from-blue-500 to-orange-600 text-white rounded-2xl p-4 text-center hover:shadow-lg transition-all"
             >
               <span className="font-bold">🔍 {t('viewAllJobsLink')}</span>
               <p className="text-xs text-white/80 mt-1">{t('accessMoreOpportunities')}</p>
@@ -1058,7 +1058,7 @@ export default function HomePage() {
                     <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                       <div className="space-y-5">
                         {/* Ilustração */}
-                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white text-center">
+                        <div className="bg-gradient-to-br from-blue-500 to-orange-600 rounded-2xl p-6 text-white text-center">
                           <Search size={48} className="mx-auto mb-3 opacity-90" />
                           <h3 className="text-lg font-bold mb-1">{t('findYourOpportunityTitle')}</h3>
                           <p className="text-sm text-white/80">{t('searchJobsProfileDesc')}</p>
@@ -1273,7 +1273,7 @@ export default function HomePage() {
                                         onError={(e) => { e.target.style.display = 'none'; }}
                                       />
                                     ) : (
-                                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-orange-600 flex items-center justify-center flex-shrink-0">
                                         <Building2 size={24} className="text-white" />
                                       </div>
                                     )}
@@ -1318,7 +1318,7 @@ export default function HomePage() {
                         )}
                         
                         {/* Card de Alerta de Vagas */}
-                        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-4 text-white">
+                        <div className="bg-gradient-to-r from-blue-500 to-orange-600 rounded-2xl p-4 text-white">
                           <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                               <span className="text-xl">🔔</span>
@@ -1455,7 +1455,7 @@ export default function HomePage() {
                             onError={(e) => { e.target.style.display = 'none'; }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-orange-600 flex items-center justify-center flex-shrink-0">
                             <Briefcase size={24} className="text-white" />
                           </div>
                         )}

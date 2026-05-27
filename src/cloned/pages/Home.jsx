@@ -97,19 +97,19 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-orange-900 to-slate-900">
       {/* Header */}
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-2.5 rounded-xl">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-500 p-2.5 rounded-xl">
               <Code2 className="w-7 h-7 text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">
                 Site Builder AI
               </h1>
-              <p className="text-sm text-purple-300">Crie sites com inteligência artificial</p>
+              <p className="text-sm text-orange-300">Crie sites com inteligência artificial</p>
             </div>
           </div>
         </div>
@@ -119,14 +119,14 @@ const Home = () => {
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 text-purple-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 text-orange-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4" />
             100% Gratuito com IA
           </div>
           <h2 className="text-6xl font-bold text-white mb-6">
             Descreva seu site,
             <br />
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-400 to-orange-400 bg-clip-text text-transparent">
               a IA cria para você
             </span>
           </h2>
@@ -152,13 +152,13 @@ const Home = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Digite sua descrição aqui..."
-            className="min-h-[150px] bg-white/10 border-white/20 text-white placeholder:text-gray-500 text-lg mb-4 resize-none focus:ring-2 focus:ring-purple-500"
+            className="min-h-[150px] bg-white/10 border-white/20 text-white placeholder:text-gray-500 text-lg mb-4 resize-none focus:ring-2 focus:ring-orange-500"
             disabled={isGenerating}
           />
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !description.trim()}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg py-6 font-semibold"
+            className="w-full bg-gradient-to-r from-orange-600 to-orange-600 hover:from-orange-700 hover:to-orange-700 text-white text-lg py-6 font-semibold"
           >
             {isGenerating ? (
               <>
@@ -187,11 +187,11 @@ const Home = () => {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-500 rounded-lg flex items-center justify-center">
                         <Eye className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h4 className="text-white font-semibold group-hover:text-purple-400 transition-colors">
+                        <h4 className="text-white font-semibold group-hover:text-orange-400 transition-colors">
                           {project.name}
                         </h4>
                         <p className="text-gray-400 text-xs">
@@ -221,8 +221,8 @@ const Home = () => {
         {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
           <div className="text-center">
-            <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-purple-400" />
+            <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-orange-400" />
             </div>
             <h4 className="text-white font-semibold text-lg mb-2">
               IA Poderosa
@@ -232,8 +232,8 @@ const Home = () => {
             </p>
           </div>
           <div className="text-center">
-            <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Code2 className="w-8 h-8 text-pink-400" />
+            <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Code2 className="w-8 h-8 text-orange-400" />
             </div>
             <h4 className="text-white font-semibold text-lg mb-2">
               Edite o Código
