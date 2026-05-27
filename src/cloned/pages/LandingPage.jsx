@@ -102,7 +102,7 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Button
-                onClick={() => navigate('/auth?role=migrant')}
+                onClick={() => openAuth('signup')}
                 className="bg-gray-900 hover:bg-gray-800 text-white h-14 px-8 text-base rounded-full"
                 data-testid="cta-need-help"
               >
@@ -110,7 +110,7 @@ export default function LandingPage() {
                 Preciso de Ajuda
               </Button>
               <Button
-                onClick={() => navigate('/auth?role=helper')}
+                onClick={() => openAuth('signup')}
                 variant="outline"
                 className="border-2 border-green-500 text-green-600 hover:bg-green-50 h-14 px-8 text-base rounded-full"
                 data-testid="cta-want-help"
