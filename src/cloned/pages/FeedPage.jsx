@@ -683,12 +683,18 @@ export default function FeedPage() {
 
               <div className="mb-3">
                 <label className="text-xs font-semibold mb-1 block">Endereço</label>
-                <Input
-                  value={postAddress}
-                  onChange={(e) => setPostAddress(e.target.value)}
-                  className="h-8 text-xs bg-white border-gray-300"
-                  data-testid="feed-post-address"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={postAddress}
+                    onChange={(e) => setPostAddress(e.target.value)}
+                    placeholder={detectingAddress ? 'Detectando...' : 'Endereço completo'}
+                    className="h-8 text-xs bg-white border-gray-300 flex-1"
+                    data-testid="feed-post-address"
+                  />
+                  <button type="button" onClick={detectAddress} disabled={detectingAddress} className="text-xs text-orange-500 font-semibold hover:underline disabled:opacity-50 whitespace-nowrap">
+                    {detectingAddress ? '...' : '📍 Detectar'}
+                  </button>
+                </div>
               </div>
 
               <Button
