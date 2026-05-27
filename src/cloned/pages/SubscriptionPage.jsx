@@ -191,7 +191,14 @@ export default function SubscriptionPage() {
                       <button
                         key={it.key}
                         data-testid={`sub-item-${it.key}`}
-                        onClick={() => setActiveItem(it.key)}
+                        onClick={() => {
+                          setActiveItem(it.key);
+                          if (it.route) {
+                            navigate(it.route);
+                          } else if (PRO_KEYS.has(it.key) && !subStatus?.active) {
+                            toast.info(`${it.label} — disponível no plano PRO`);
+                          }
+                        }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition ${
                           isActive ? 'bg-orange-50 text-orange-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'
                         }`}
@@ -207,6 +214,7 @@ export default function SubscriptionPage() {
             ))}
           </div>
         </aside>
+
 
         {/* CENTER PANEL */}
         <main className="col-span-12 md:col-span-6">
