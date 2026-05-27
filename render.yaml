@@ -1,12 +1,35 @@
 services:
+  # Serviço único Docker: build do frontend Vite + FastAPI servindo /api e /
   - type: web
     name: jatai-app
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api
     autoDeploy: true
     envVars:
+      # ---- Backend FastAPI ----
+      - key: MONGO_URL
+        sync: false                    # MongoDB Atlas — preencher no painel
+      - key: DB_NAME
+        value: watizat_db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: PIX_KEY
+        sync: false                    # chave PIX real — preencher no painel
+      - key: PIX_MERCHANT_NAME
+        value: JATAI REGIAO TRABALHO
+      - key: PIX_MERCHANT_CITY
+        value: SAO PAULO
+      - key: SUB_AMOUNT
+        value: "35.90"
+      - key: SUB_TRIAL_DAYS
+        value: "3"
+
+      # ---- Frontend Vite (embedados no build via ARG) ----
       - key: VITE_SUPABASE_URL
         value: https://bcafttsxvperfslgjphb.supabase.co
       - key: VITE_SUPABASE_PROJECT_ID
