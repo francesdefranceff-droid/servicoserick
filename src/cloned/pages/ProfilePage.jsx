@@ -194,9 +194,22 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <span className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 rounded-full border-[3px] border-white shadow" />
-                <button className="absolute top-1 right-1 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100 hover:bg-gray-50 transition">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute top-1 right-1 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100 hover:bg-gray-50 transition disabled:opacity-60"
+                  title="Alterar foto de perfil"
+                >
                   <Camera size={14} className="text-primary" />
                 </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
               </div>
 
               {/* Identidade */}
