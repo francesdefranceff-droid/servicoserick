@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MapPreview from '../components/MapPreview';
+import { fetchChatConversations, fetchChatMessages, fetchChatUser, sendChatMessage } from '../lib/chatService';
 
 const CATEGORY_INFO = {
   food: { icon: '🍽️', label: 'Alimentação', color: 'bg-green-100 text-green-700' },
@@ -133,13 +134,11 @@ export default function DirectChatPage() {
   };
 
   const sendSystemMessage = async (text) => {
-    const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to_user_id: userId, message: text }),
-    });
-    if (response.ok) fetchMessages();
-    return response.ok;
+    const sent = await sendChatMessage(userId, text, currentUser?.id);
+    setMessages((prev) => [...prev, sent]);
+    fetchMessages();
+    fetchConversations();
+    return true;
   };
 
   const closePaymentModal = () => {
@@ -173,10 +172,7 @@ export default function DirectChatPage() {
 
   const fetchOtherUser = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/users/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok && isJsonResponse(response)) setOtherUser(await response.json());
+      setOtherUser(await fetchChatUser(userId));
     } catch (error) { console.error(error); }
   };
 
@@ -209,23 +205,15 @@ export default function DirectChatPage() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/messages/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok && isJsonResponse(response)) setMessages(await response.json());
+      setMessages(await fetchChatMessages(userId, currentUser?.id));
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
 
   const fetchConversations = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/conversations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok && isJsonResponse(res)) {
-        const data = await res.json();
-        setConversations(Array.isArray(data) ? data : []);
-      }
+      const data = await fetchChatConversations(currentUser?.id);
+      setConversations(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
   };
 
@@ -238,24 +226,17 @@ export default function DirectChatPage() {
         id: `local-${Date.now()}`,
         from_user_id: currentUser?.id || 'preview-user',
         to_user_id: userId,
+        is_from_me: true,
         message: messageText,
         created_at: new Date().toISOString(),
         ...messageData,
       };
-      const payload = { to_user_id: userId, message: messageText, ...messageData };
-      let ok = false;
-      try {
-        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/messages`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        ok = response.ok && isJsonResponse(response);
-      } catch {}
+      const sent = await sendChatMessage(userId, messageText, currentUser?.id, messageData);
       setInput('');
       setShowMediaOptions(false);
-      if (ok) fetchMessages();
-      else setMessages((prev) => [...prev, optimistic]);
+      setMessages((prev) => [...prev, sent || optimistic]);
+      fetchMessages();
+      fetchConversations();
     } catch (error) {
       console.error(error);
       toast.error('Não foi possível enviar a mensagem');
