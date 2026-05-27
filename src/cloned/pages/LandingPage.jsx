@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
 import { Search, Wrench, MapPin, Star } from 'lucide-react';
 import i18n from '../i18n';
+import AuthModal from '../components/AuthModal';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [language, setLanguage] = useState((i18n.language || 'pt').toUpperCase().slice(0, 2));
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const openAuth = (mode) => { setAuthMode(mode); setAuthOpen(true); };
 
   const changeLanguage = (lang) => {
     const code = lang.toLowerCase();
