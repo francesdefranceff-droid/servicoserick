@@ -106,20 +106,51 @@ export default function ProfilePage() {
       </div>
 
       <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <div className="bg-white rounded-3xl p-8 shadow-card space-y-6">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User size={48} className="text-white" />
+        {/* Hero Card Personalizado */}
+        <div className="relative bg-white rounded-3xl shadow-card overflow-hidden mb-6">
+          {/* Cover banner com gradiente e padrões */}
+          <div className="relative h-36 bg-gradient-to-br from-primary via-primary to-accent overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
+              <div className="absolute top-10 left-10 w-24 h-24 rounded-full bg-accent/40 blur-xl" />
+              <div className="absolute bottom-0 right-1/3 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
             </div>
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs font-medium">
+              <Sparkles size={12} />
+              Membro ativo
+            </div>
+          </div>
+
+          {/* Avatar sobreposto */}
+          <div className="px-6 pb-6 -mt-14">
+            <div className="flex items-end justify-between mb-4">
+              <div className="relative">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent ring-4 ring-white shadow-xl flex items-center justify-center overflow-hidden">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={52} className="text-white" />
+                  )}
+                </div>
+                <button className="absolute bottom-1 right-1 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100 hover:bg-gray-50 transition">
+                  <Camera size={14} className="text-primary" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold mb-2">
+                <Shield size={12} />
+                Verificado
+              </div>
+            </div>
+
             <div>
-              <div className="flex items-center gap-2 justify-center">
+              <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-2xl font-heading font-bold text-textPrimary" data-testid="user-name">
                   {user?.use_display_name && user?.display_name ? user.display_name : user?.name}
                 </h2>
                 <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                   <DialogTrigger asChild>
-                    <button className="p-2 hover:bg-gray-100 rounded-full transition-all">
-                      <Edit size={18} className="text-primary" />
+                    <button className="p-1.5 hover:bg-gray-100 rounded-full transition-all">
+                      <Edit size={16} className="text-primary" />
                     </button>
                   </DialogTrigger>
                   <DialogContent className="rounded-3xl">
@@ -159,25 +190,55 @@ export default function ProfilePage() {
                 </Dialog>
               </div>
               {user?.use_display_name && user?.display_name && (
-                <p className="text-xs text-textMuted">Nome fictício ativo</p>
+                <p className="text-xs text-textMuted mb-1">Nome fictício ativo</p>
               )}
-              <p className="text-textMuted capitalize" data-testid="user-role">
-                {user?.role === 'migrant' ? t('migrant') : user?.role === 'helper' ? t('helper') : user?.role}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/15 text-accent rounded-full text-xs font-semibold capitalize" data-testid="user-role">
+                  {user?.role === 'migrant' ? '🌍 ' + t('migrant') : user?.role === 'helper' ? '🤝 ' + t('helper') : user?.role}
+                </span>
+                {user?.location && (
+                  <span className="inline-flex items-center gap-1 text-xs text-textMuted">
+                    <MapPin size={12} /> {user.location}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 mt-5 pt-5 border-t border-gray-100">
+              <div className="text-center">
+                <div className="text-xl font-bold text-textPrimary">{selectedCategories.length}</div>
+                <div className="text-[11px] text-textMuted uppercase tracking-wide">Categorias</div>
+              </div>
+              <div className="text-center border-x border-gray-100">
+                <div className="text-xl font-bold text-textPrimary">{user?.languages?.length || 0}</div>
+                <div className="text-[11px] text-textMuted uppercase tracking-wide">Idiomas</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-textPrimary">0</div>
+                <div className="text-[11px] text-textMuted uppercase tracking-wide">Ajudas</div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="border-t border-gray-100 pt-6 space-y-4">
+        {/* Informações de contato */}
+        <div className="bg-white rounded-3xl p-6 shadow-card space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center gap-3 text-textSecondary">
-              <Mail size={20} />
-              <span data-testid="user-email">{user?.email}</span>
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail size={16} className="text-primary" />
+              </div>
+              <span className="text-sm" data-testid="user-email">{user?.email}</span>
             </div>
             {user?.languages && user.languages.length > 0 && (
               <div className="flex items-center gap-3 text-textSecondary">
-                <Globe size={20} />
-                <div className="flex gap-2">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Globe size={16} className="text-primary" />
+                </div>
+                <div className="flex gap-2 flex-wrap">
                   {user.languages.map(lang => (
-                    <span key={lang} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                    <span key={lang} className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">
                       {lang.toUpperCase()}
                     </span>
                   ))}
@@ -185,6 +246,7 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
 
           {/* Seção de Categorias de Ajuda */}
           <div className="border-t border-gray-100 pt-6">
