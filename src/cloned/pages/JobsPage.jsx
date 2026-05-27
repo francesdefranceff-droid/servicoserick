@@ -127,7 +127,7 @@ export default function JobsPage() {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('Paris');
+  const [locationQuery, setLocationQuery] = useState('São Paulo');
   const [jobOffers, setJobOffers] = useState([]);
   const [jobSeekers, setJobSeekers] = useState([]);
   const [externalJobs, setExternalJobs] = useState([]);
