@@ -247,10 +247,10 @@ export default function HousingPage() {
           {/* Logo and Search */}
           <div className="flex items-center justify-between gap-4">
             <button onClick={() => navigate('/home')} className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                 <Home size={18} className="text-white" />
               </div>
-              <span className="font-bold text-xl hidden sm:block text-rose-500">Watizat</span>
+              <span className="font-bold text-xl hidden sm:block text-orange-500">Watizat</span>
             </button>
 
             {/* Search Bar - Airbnb Style */}
@@ -270,7 +270,7 @@ export default function HousingPage() {
                 </button>
                 <button 
                   onClick={() => setShowFiltersModal(true)}
-                  className="p-3 mx-1 bg-rose-500 hover:bg-rose-600 rounded-full text-white transition-colors"
+                  className="p-3 mx-1 bg-orange-500 hover:bg-orange-600 rounded-full text-white transition-colors"
                 >
                   <SlidersHorizontal size={16} />
                 </button>
@@ -335,11 +335,11 @@ export default function HousingPage() {
       </div>
 
       {/* Stats Banner */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-b">
+      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-center gap-8 sm:gap-16">
             <div className="text-center">
-              <p className="text-2xl sm:text-3xl font-bold text-rose-600">
+              <p className="text-2xl sm:text-3xl font-bold text-orange-600">
                 {listings.filter(l => l.listing_type === 'offer').length}
               </p>
               <p className="text-xs sm:text-sm text-gray-600">{t('availableHomes')}</p>
@@ -381,7 +381,7 @@ export default function HousingPage() {
             <p className="text-gray-500 mb-6">{t('beFirstToOffer')}</p>
             <Button 
               onClick={() => setShowCreateModal(true)} 
-              className="rounded-full bg-rose-500 hover:bg-rose-600 px-8"
+              className="rounded-full bg-orange-500 hover:bg-orange-600 px-8"
             >
               <Plus size={18} className="mr-2" />
               {t('createListing')}
@@ -413,7 +413,7 @@ export default function HousingPage() {
                   >
                     <Heart 
                       size={20} 
-                      className={favorites.includes(listing.id) ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}
+                      className={favorites.includes(listing.id) ? 'fill-orange-500 text-orange-500' : 'text-gray-600'}
                     />
                   </button>
 
@@ -428,7 +428,7 @@ export default function HousingPage() {
 
                   {/* Duration Badge */}
                   {listing.duration === 'exchange' && (
-                    <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-purple-500 text-white rounded-full text-xs font-bold">
+                    <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-orange-500 text-white rounded-full text-xs font-bold">
                       🤝 House Sitting
                     </div>
                   )}
@@ -495,7 +495,7 @@ export default function HousingPage() {
       {/* Floating Action Button - Mobile */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40 sm:hidden"
+        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40 sm:hidden"
       >
         <Plus size={28} />
       </button>
@@ -528,7 +528,7 @@ export default function HousingPage() {
                   >
                     <Heart 
                       size={20} 
-                      className={favorites.includes(selectedListing.id) ? 'fill-rose-500 text-rose-500' : ''}
+                      className={favorites.includes(selectedListing.id) ? 'fill-orange-500 text-orange-500' : ''}
                     />
                   </button>
                 </div>
@@ -584,16 +584,16 @@ export default function HousingPage() {
 
                 {/* Availability Calendar */}
                 {(selectedListing.available_from || selectedListing.available_until) && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Calendar size={18} className="text-blue-600" />
+                      <Calendar size={18} className="text-orange-600" />
                       {t('availability')}
                     </h3>
                     <div className="flex items-center gap-4">
                       {selectedListing.available_from && (
                         <div className="flex-1 p-3 bg-white rounded-lg text-center">
                           <p className="text-xs text-gray-500 mb-1">{t('from')}</p>
-                          <p className="font-semibold text-blue-600">
+                          <p className="font-semibold text-orange-600">
                             {new Date(selectedListing.available_from).toLocaleDateString('pt-BR', {
                               day: 'numeric',
                               month: 'short',
@@ -607,7 +607,7 @@ export default function HousingPage() {
                           <ChevronRight className="text-gray-400" />
                           <div className="flex-1 p-3 bg-white rounded-lg text-center">
                             <p className="text-xs text-gray-500 mb-1">{t('until')}</p>
-                            <p className="font-semibold text-blue-600">
+                            <p className="font-semibold text-orange-600">
                               {new Date(selectedListing.available_until).toLocaleDateString('pt-BR', {
                                 day: 'numeric',
                                 month: 'short',
@@ -629,7 +629,7 @@ export default function HousingPage() {
 
                 {/* Exchange Services */}
                 {selectedListing.exchange_services && (
-                  <div className="mb-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       🤝 {t('exchangeServices')}
                     </h3>
@@ -667,13 +667,13 @@ export default function HousingPage() {
                 {/* Host Info */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
                       <User size={28} className="text-white" />
                     </div>
                     <div>
                       <p className="font-semibold">{selectedListing.user?.name || 'Host'}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <BadgeCheck size={14} className="text-blue-500" />
+                        <BadgeCheck size={14} className="text-orange-500" />
                         <span>{t('verified')}</span>
                       </div>
                     </div>
@@ -683,7 +683,7 @@ export default function HousingPage() {
                       setSelectedListing(null);
                       navigate(`/direct-chat/${selectedListing.user_id}`);
                     }}
-                    className="rounded-full bg-rose-500 hover:bg-rose-600"
+                    className="rounded-full bg-orange-500 hover:bg-orange-600"
                   >
                     <MessageCircle size={18} className="mr-2" />
                     {t('contact')}
@@ -749,10 +749,10 @@ export default function HousingPage() {
                       setListingType('offer');
                       setNewListing(prev => ({...prev, duration: 'exchange'}));
                     }}
-                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all text-left group"
+                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Heart size={32} className="text-white" />
                       </div>
                       <div className="flex-1">
@@ -806,7 +806,7 @@ export default function HousingPage() {
                           onClick={() => setNewListing({...newListing, city: city.name})}
                           className={`p-2 rounded-xl border-2 text-center transition-all ${
                             newListing.city === city.name
-                              ? 'border-rose-500 bg-rose-50'
+                              ? 'border-orange-500 bg-orange-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
@@ -834,7 +834,7 @@ export default function HousingPage() {
                             onClick={() => setNewListing({...newListing, accommodation_type: type.value})}
                             className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
                               newListing.accommodation_type === type.value
-                                ? 'border-rose-500 bg-rose-50'
+                                ? 'border-orange-500 bg-orange-50'
                                 : 'border-gray-200 hover:border-gray-300'
                             }`}
                           >
@@ -856,7 +856,7 @@ export default function HousingPage() {
                           onClick={() => setNewListing({...newListing, duration: dur.value})}
                           className={`p-3 rounded-xl border-2 transition-all text-left ${
                             newListing.duration === dur.value
-                              ? 'border-rose-500 bg-rose-50'
+                              ? 'border-orange-500 bg-orange-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
@@ -872,7 +872,7 @@ export default function HousingPage() {
                   {listingType === 'offer' && (
                     <div>
                       <Label className="text-sm font-semibold mb-2 block flex items-center gap-2">
-                        <Calendar size={16} className="text-rose-500" />
+                        <Calendar size={16} className="text-orange-500" />
                         {t('availability')}
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
@@ -950,7 +950,7 @@ export default function HousingPage() {
                             onClick={() => toggleAmenity(amenity.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
                               newListing.amenities.includes(amenity.id)
-                                ? 'border-rose-500 bg-rose-50 text-rose-700'
+                                ? 'border-orange-500 bg-orange-50 text-orange-700'
                                 : 'border-gray-200 text-gray-600 hover:border-gray-300'
                             }`}
                           >
@@ -971,7 +971,7 @@ export default function HousingPage() {
                     <button
                       onClick={() => setNewListing({...newListing, pets_allowed: !newListing.pets_allowed})}
                       className={`w-14 h-8 rounded-full transition-all ${
-                        newListing.pets_allowed ? 'bg-rose-500' : 'bg-gray-300'
+                        newListing.pets_allowed ? 'bg-orange-500' : 'bg-gray-300'
                       }`}
                     >
                       <div className={`w-6 h-6 bg-white rounded-full shadow transform transition-transform ${
@@ -995,7 +995,7 @@ export default function HousingPage() {
                   {/* Photos Upload */}
                   <div>
                     <Label className="text-sm font-semibold mb-2 block flex items-center gap-2">
-                      <Camera size={16} className="text-rose-500" />
+                      <Camera size={16} className="text-orange-500" />
                       📸 {t('addPhotos')} <span className="text-gray-400 font-normal text-xs">(opcional)</span>
                     </Label>
 
