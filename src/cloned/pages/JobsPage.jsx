@@ -8,31 +8,21 @@ import { Search, MapPin, Star, Clock, MessageCircle, Plus, Filter, Briefcase, Wr
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-// Plataformas de emprego externas
+// Plataformas de emprego externas (Brasil)
 const JOB_PLATFORMS = [
-  { 
-    id: 'indeed', 
-    name: 'Indeed', 
+  {
+    id: 'indeed',
+    name: 'Indeed Brasil',
     logo: '🔵',
     color: 'bg-blue-600',
-    baseUrl: 'https://fr.indeed.com/jobs',
+    baseUrl: 'https://br.indeed.com/jobs',
     searchParam: 'q',
     locationParam: 'l',
     description: 'Maior site de empregos do mundo'
   },
-  { 
-    id: 'pole_emploi', 
-    name: 'Pôle Emploi', 
-    logo: '🇫🇷',
-    color: 'bg-blue-800',
-    baseUrl: 'https://candidat.pole-emploi.fr/offres/recherche',
-    searchParam: 'motsCles',
-    locationParam: 'lieux',
-    description: 'Agência de emprego francesa'
-  },
-  { 
-    id: 'linkedin', 
-    name: 'LinkedIn', 
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
     logo: '💼',
     color: 'bg-blue-700',
     baseUrl: 'https://www.linkedin.com/jobs/search',
@@ -40,55 +30,65 @@ const JOB_PLATFORMS = [
     locationParam: 'location',
     description: 'Rede profissional mundial'
   },
-  { 
-    id: 'leboncoin', 
-    name: 'Leboncoin', 
+  {
+    id: 'catho',
+    name: 'Catho',
+    logo: '🟢',
+    color: 'bg-green-600',
+    baseUrl: 'https://www.catho.com.br/vagas',
+    searchParam: 'q',
+    locationParam: 'l',
+    description: 'Vagas de emprego no Brasil'
+  },
+  {
+    id: 'vagas',
+    name: 'Vagas.com',
+    logo: '🟡',
+    color: 'bg-yellow-500',
+    baseUrl: 'https://www.vagas.com.br/vagas-de',
+    searchParam: 'q',
+    locationParam: 'l',
+    description: 'Portal brasileiro de vagas'
+  },
+  {
+    id: 'infojobs',
+    name: 'InfoJobs',
     logo: '🟠',
     color: 'bg-orange-500',
-    baseUrl: 'https://www.leboncoin.fr/recherche',
-    searchParam: 'text',
-    locationParam: 'locations',
-    description: 'Anúncios classificados na França'
+    baseUrl: 'https://www.infojobs.com.br/empregos.aspx',
+    searchParam: 'palabra',
+    locationParam: 'provincia',
+    description: 'Empregos em todo Brasil'
   },
-  { 
-    id: 'monster', 
-    name: 'Monster', 
-    logo: '👾',
+  {
+    id: 'gupy',
+    name: 'Gupy',
+    logo: '🟣',
     color: 'bg-purple-600',
-    baseUrl: 'https://www.monster.fr/emploi/recherche',
+    baseUrl: 'https://portal.gupy.io/job-search',
+    searchParam: 'name',
+    locationParam: 'city',
+    description: 'Vagas em empresas brasileiras'
+  },
+  {
+    id: 'sine',
+    name: 'SINE',
+    logo: '🇧🇷',
+    color: 'bg-emerald-700',
+    baseUrl: 'https://servicos.mte.gov.br/sine',
     searchParam: 'q',
-    locationParam: 'where',
-    description: 'Portal de carreiras internacional'
-  },
-  { 
-    id: 'hellowork', 
-    name: 'HelloWork', 
-    logo: '👋',
-    color: 'bg-green-600',
-    baseUrl: 'https://www.hellowork.com/fr-fr/emploi/recherche.html',
-    searchParam: 'k',
     locationParam: 'l',
-    description: 'Empregos e formação na França'
+    description: 'Sistema Nacional de Emprego'
   },
-  { 
-    id: 'apec', 
-    name: 'APEC', 
-    logo: '🎯',
-    color: 'bg-red-600',
-    baseUrl: 'https://www.apec.fr/candidat/recherche-emploi.html/emploi',
-    searchParam: 'motsCles',
-    locationParam: 'lieu',
-    description: 'Empregos para executivos'
-  },
-  { 
-    id: 'welcometothejungle', 
-    name: 'Welcome to the Jungle', 
-    logo: '🌴',
-    color: 'bg-yellow-500',
-    baseUrl: 'https://www.welcometothejungle.com/fr/jobs',
-    searchParam: 'query',
-    locationParam: 'aroundQuery',
-    description: 'Startups e empresas inovadoras'
+  {
+    id: 'glassdoor',
+    name: 'Glassdoor',
+    logo: '🟩',
+    color: 'bg-green-700',
+    baseUrl: 'https://www.glassdoor.com.br/Vaga/index.htm',
+    searchParam: 'sc.keyword',
+    locationParam: 'locKeyword',
+    description: 'Vagas e avaliações de empresas'
   }
 ];
 
@@ -108,18 +108,18 @@ const SERVICE_CATEGORIES = [
   { value: 'other', label: 'Outros', icon: MoreHorizontal, emoji: '➕' }
 ];
 
-// Termos de busca sugeridos por categoria
+// Termos de busca sugeridos por categoria (Brasil - Português)
 const SEARCH_SUGGESTIONS = {
-  'bricolage': ['électricien', 'plombier', 'menuisier', 'peintre'],
-  'cleaning': ['agent d\'entretien', 'femme de ménage', 'nettoyage'],
-  'transport': ['chauffeur', 'livreur', 'déménageur'],
-  'food': ['cuisinier', 'serveur', 'aide cuisine', 'restauration'],
-  'care': ['aide soignant', 'auxiliaire de vie', 'infirmier'],
-  'education': ['professeur', 'formateur', 'animateur'],
-  'tech': ['développeur', 'informaticien', 'technicien'],
-  'childcare': ['nounou', 'baby-sitter', 'auxiliaire puériculture'],
-  'garden': ['jardinier', 'paysagiste', 'espaces verts'],
-  'moving': ['déménageur', 'manutentionnaire', 'logistique']
+  'bricolage': ['eletricista', 'encanador', 'marceneiro', 'pintor'],
+  'cleaning': ['auxiliar de limpeza', 'faxineira', 'diarista'],
+  'transport': ['motorista', 'entregador', 'motoboy'],
+  'food': ['cozinheiro', 'garçom', 'auxiliar de cozinha', 'atendente'],
+  'care': ['cuidador de idosos', 'técnico de enfermagem', 'enfermeiro'],
+  'education': ['professor', 'instrutor', 'monitor'],
+  'tech': ['desenvolvedor', 'analista de sistemas', 'técnico de TI'],
+  'childcare': ['babá', 'auxiliar de creche', 'pajem'],
+  'garden': ['jardineiro', 'paisagista'],
+  'moving': ['ajudante de mudança', 'carregador', 'logística']
 };
 
 export default function JobsPage() {
@@ -127,7 +127,7 @@ export default function JobsPage() {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('Paris');
+  const [locationQuery, setLocationQuery] = useState('São Paulo');
   const [jobOffers, setJobOffers] = useState([]);
   const [jobSeekers, setJobSeekers] = useState([]);
   const [externalJobs, setExternalJobs] = useState([]);
@@ -141,55 +141,13 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
 
-  // Mapeamento de termos de busca Português → Francês
-  const jobSearchTranslations = {
-    'garçom': 'serveur', 'garcom': 'serveur', 'garçon': 'serveur',
-    'garconete': 'serveuse', 'garçonete': 'serveuse',
-    'cozinheiro': 'cuisinier', 'cozinha': 'cuisine', 'chef': 'chef cuisinier',
-    'limpeza': 'nettoyage', 'faxineiro': 'agent de nettoyage', 'faxineira': 'agent de nettoyage',
-    'construção': 'construction', 'pedreiro': 'maçon', 'pintor': 'peintre',
-    'eletricista': 'électricien', 'encanador': 'plombier',
-    'motorista': 'chauffeur', 'entregador': 'livreur', 'entrega': 'livraison',
-    'babá': 'nounou', 'baba': 'nounou', 'cuidador': 'aide-soignant', 'cuidadora': 'aide-soignante',
-    'jardineiro': 'jardinier', 'jardinagem': 'jardinage',
-    'segurança': 'agent de sécurité', 'porteiro': 'gardien',
-    'recepcionista': 'réceptionniste', 'vendedor': 'vendeur', 'vendedora': 'vendeuse',
-    'caixa': 'caissier', 'atendente': 'employé', 'auxiliar': 'assistant', 'ajudante': 'aide',
-    'operador': 'opérateur', 'montador': 'monteur', 'mecânico': 'mécanicien', 'mecanico': 'mécanicien',
-    'padeiro': 'boulanger', 'açougueiro': 'boucher', 'acougueiro': 'boucher',
-    'carpinteiro': 'charpentier', 'soldador': 'soudeur',
-    'técnico': 'technicien', 'tecnico': 'technicien',
-    'enfermeiro': 'infirmier', 'enfermeira': 'infirmière',
-    'professor': 'professeur', 'professora': 'professeur',
-    'secretário': 'secrétaire', 'secretaria': 'secrétaire',
-    'contador': 'comptable', 'advogado': 'avocat',
-    'programador': 'développeur', 'desenvolvedor': 'développeur',
-    'designer': 'designer', 'marketing': 'marketing', 'vendas': 'vente',
-    'administrativo': 'administratif', 'logística': 'logistique', 'logistica': 'logistique',
-    'armazém': 'entrepôt', 'armazem': 'entrepôt', 'estoque': 'stock',
-    'empilhadeira': 'cariste', 'carregador': 'manutentionnaire',
-    'mudança': 'déménagement', 'mudanca': 'déménagement',
-    'hotel': 'hôtel', 'restaurante': 'restaurant', 'bar': 'bar', 'café': 'café',
-    'padaria': 'boulangerie', 'supermercado': 'supermarché', 'loja': 'magasin',
-    'escritório': 'bureau', 'escritorio': 'bureau', 'fábrica': 'usine', 'fabrica': 'usine',
-    'obra': 'chantier', 'hospital': 'hôpital', 'clínica': 'clinique', 'clinica': 'clinique',
-    'escola': 'école', 'creche': 'crèche'
-  };
-
-  // Função para traduzir termo de busca
-  const translateSearchTerm = (term) => {
-    const lowerTerm = term.toLowerCase().trim();
-    if (jobSearchTranslations[lowerTerm]) return jobSearchTranslations[lowerTerm];
-    for (const [pt, fr] of Object.entries(jobSearchTranslations)) {
-      if (lowerTerm.includes(pt)) return lowerTerm.replace(pt, fr);
-    }
-    return term;
-  };
+  // Sem tradução: busca usa termos em português (Brasil)
+  const translateSearchTerm = (term) => term;
 
   useEffect(() => {
     fetchJobs();
     // Buscar vagas externas na inicialização
-    searchExternalJobs('emploi', 'France');
+    searchExternalJobs('emprego', 'Brasil');
   }, []);
 
   useEffect(() => {
@@ -230,12 +188,11 @@ export default function JobsPage() {
   const searchExternalJobs = async (query, location, page = 1) => {
     setSearchLoading(true);
     try {
-      // Traduzir termo de busca para francês
-      const translatedQuery = translateSearchTerm(query || 'emploi');
-      
+      const translatedQuery = translateSearchTerm(query || 'emprego');
+
       const params = new URLSearchParams({
         query: translatedQuery,
-        location: location || 'France',
+        location: location || 'Brasil',
         page: page.toString(),
         date_posted: 'all'
       });
@@ -291,28 +248,29 @@ export default function JobsPage() {
     return `${diffDays} dias atrás`;
   };
 
-  // Gerar URL de busca para cada plataforma
+  // Gerar URL de busca para cada plataforma (Brasil)
   const generateSearchUrl = (platform, query, location) => {
-    const searchTerm = query || (selectedCategory !== 'all' ? SEARCH_SUGGESTIONS[selectedCategory]?.[0] : 'emploi');
-    const loc = location || 'Paris';
-    
+    const searchTerm = query || (selectedCategory !== 'all' ? SEARCH_SUGGESTIONS[selectedCategory]?.[0] : 'emprego');
+    const loc = location || 'São Paulo';
+    const slug = (s) => encodeURIComponent(String(s).toLowerCase().trim().replace(/\s+/g, '-'));
+
     switch(platform.id) {
       case 'indeed':
         return `${platform.baseUrl}?q=${encodeURIComponent(searchTerm)}&l=${encodeURIComponent(loc)}`;
-      case 'pole_emploi':
-        return `${platform.baseUrl}?motsCles=${encodeURIComponent(searchTerm)}&offresPartenaires=true`;
       case 'linkedin':
-        return `${platform.baseUrl}?keywords=${encodeURIComponent(searchTerm)}&location=${encodeURIComponent(loc)}&f_TPR=r86400`;
-      case 'leboncoin':
-        return `https://www.leboncoin.fr/offres_d_emploi/offres?text=${encodeURIComponent(searchTerm)}`;
-      case 'monster':
-        return `${platform.baseUrl}?q=${encodeURIComponent(searchTerm)}&where=${encodeURIComponent(loc)}`;
-      case 'hellowork':
-        return `${platform.baseUrl}?k=${encodeURIComponent(searchTerm)}&l=${encodeURIComponent(loc)}`;
-      case 'apec':
-        return `${platform.baseUrl}?motsCles=${encodeURIComponent(searchTerm)}`;
-      case 'welcometothejungle':
-        return `${platform.baseUrl}?query=${encodeURIComponent(searchTerm)}&aroundQuery=${encodeURIComponent(loc)}`;
+        return `${platform.baseUrl}?keywords=${encodeURIComponent(searchTerm)}&location=${encodeURIComponent(loc + ', Brasil')}&f_TPR=r86400`;
+      case 'catho':
+        return `https://www.catho.com.br/vagas/${slug(searchTerm)}/${slug(loc)}/`;
+      case 'vagas':
+        return `https://www.vagas.com.br/vagas-de-${slug(searchTerm)}?l[]=${encodeURIComponent(loc)}`;
+      case 'infojobs':
+        return `${platform.baseUrl}?palabra=${encodeURIComponent(searchTerm)}&provincia=${encodeURIComponent(loc)}`;
+      case 'gupy':
+        return `${platform.baseUrl}?jobName=${encodeURIComponent(searchTerm)}&city=${encodeURIComponent(loc)}`;
+      case 'glassdoor':
+        return `https://www.glassdoor.com.br/Vaga/${slug(loc)}-${slug(searchTerm)}-vagas-SRCH_IL.0,${loc.length}_IC2487341_KO${loc.length + 1},${loc.length + 1 + searchTerm.length}.htm`;
+      case 'sine':
+        return `https://www.google.com/search?q=${encodeURIComponent(`SINE vagas ${searchTerm} ${loc}`)}`;
       default:
         return platform.baseUrl;
     }
@@ -822,10 +780,10 @@ export default function JobsPage() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mt-6">
               <h3 className="font-bold text-yellow-800 mb-2">💡 Dicas para Encontrar Emprego</h3>
               <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• Use palavras-chave específicas (ex: &quot;aide cuisine&quot; em vez de apenas &quot;cuisine&quot;)</li>
+                <li>• Use palavras-chave específicas (ex: &quot;auxiliar de cozinha&quot; em vez de apenas &quot;cozinha&quot;)</li>
                 <li>• Cadastre-se nas plataformas para receber alertas de vagas</li>
-                <li>• O <strong>Pôle Emploi</strong> é a agência oficial de emprego na França</li>
-                <li>• Mantenha seu CV atualizado em francês</li>
+                <li>• O <strong>SINE</strong> é o sistema oficial de emprego do Brasil</li>
+                <li>• Mantenha seu currículo atualizado e completo</li>
               </ul>
             </div>
 
@@ -833,52 +791,52 @@ export default function JobsPage() {
             <div className="bg-white rounded-2xl p-4 shadow-md">
               <h3 className="font-bold text-gray-800 mb-3">🔗 Links Úteis</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <a 
-                  href="https://www.service-public.fr/particuliers/vosdroits/N19806" 
-                  target="_blank" 
+                <a
+                  href="https://www.gov.br/trabalho-e-emprego/pt-br"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   <span className="text-lg">📋</span>
                   <div>
                     <p className="font-medium text-sm text-gray-800">Direitos do Trabalhador</p>
-                    <p className="text-xs text-gray-500">service-public.fr</p>
+                    <p className="text-xs text-gray-500">gov.br/trabalho</p>
                   </div>
                 </a>
-                <a 
-                  href="https://www.francetravail.fr/" 
-                  target="_blank" 
+                <a
+                  href="https://servicos.mte.gov.br/sine"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <span className="text-lg">🇫🇷</span>
+                  <span className="text-lg">🇧🇷</span>
                   <div>
-                    <p className="font-medium text-sm text-gray-800">France Travail</p>
-                    <p className="text-xs text-gray-500">Cadastro oficial</p>
+                    <p className="font-medium text-sm text-gray-800">SINE</p>
+                    <p className="text-xs text-gray-500">Sistema Nacional de Emprego</p>
                   </div>
                 </a>
-                <a 
-                  href="https://www.cidj.com/emploi-jobs" 
-                  target="_blank" 
+                <a
+                  href="https://www.gov.br/inss/pt-br"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   <span className="text-lg">👥</span>
                   <div>
-                    <p className="font-medium text-sm text-gray-800">CIDJ - Empregos Jovens</p>
-                    <p className="text-xs text-gray-500">Para jovens trabalhadores</p>
+                    <p className="font-medium text-sm text-gray-800">INSS</p>
+                    <p className="text-xs text-gray-500">Previdência Social</p>
                   </div>
                 </a>
-                <a 
-                  href="https://www.refugies.info/demarche/trouver-un-emploi" 
-                  target="_blank" 
+                <a
+                  href="https://www.jovemaprendiz.com.br/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <span className="text-lg">🤝</span>
+                  <span className="text-lg">🎓</span>
                   <div>
-                    <p className="font-medium text-sm text-gray-800">Refugiés.info</p>
-                    <p className="text-xs text-gray-500">Ajuda para refugiados</p>
+                    <p className="font-medium text-sm text-gray-800">Jovem Aprendiz</p>
+                    <p className="text-xs text-gray-500">Primeiro emprego</p>
                   </div>
                 </a>
               </div>
@@ -999,7 +957,7 @@ export default function JobsPage() {
                           {item.location && (
                             <span className="flex items-center gap-1">
                               <MapPin size={12} />
-                              Paris
+                              {item.location || 'Brasil'}
                             </span>
                           )}
                           <span className="flex items-center gap-1">
