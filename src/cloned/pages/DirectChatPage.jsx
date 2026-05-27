@@ -305,7 +305,7 @@ export default function DirectChatPage() {
   // Post atual relacionado à conversa
   const currentPost = userPosts.find(p => p.type === 'need') || userPosts[0];
 
-  const avatarUrl = (u) => u?.avatar || `https://i.pravatar.cc/200?u=${u?.id || u?.email || 'user'}`;
+  const avatarUrl = (u) => u?.avatar || u?.avatar_url || (u?.id ? `https://i.pravatar.cc/200?u=${u.id}` : 'https://i.pravatar.cc/200?u=guest');
 
   return (
     <div className="min-h-screen bg-[#f4f5f7] pb-20 md:pb-0" data-testid="direct-chat-page">
