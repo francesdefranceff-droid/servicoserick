@@ -88,7 +88,14 @@ export function ClonedAuthProvider({ children }) {
     );
   }
 
-  return <AuthContext.Provider value={{ user, token, login, logout }}>{children}</AuthContext.Provider>;
+  const previewUser = user || {
+    id: 'preview-user',
+    name: 'Usuário Preview',
+    role: 'admin',
+    email: 'preview@watizat.local',
+  };
+
+  return <AuthContext.Provider value={{ user: previewUser, token: token || 'preview-token', login, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function clonedRoutes(user) {
