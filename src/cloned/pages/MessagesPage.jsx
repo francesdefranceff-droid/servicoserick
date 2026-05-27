@@ -186,7 +186,7 @@ export default function MessagesPage() {
         <div className="max-w-[1400px] mx-auto px-4 py-2 flex items-center justify-center gap-3 flex-wrap">
           <span className="text-sm text-gray-800">Acesse novamente ferramentas e serviços exclusivos:</span>
           <button
-            onClick={() => navigate('/subscription')}
+            onClick={() => navigate('/assinatura')}
             className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-1.5 rounded-md"
             data-testid="premium-cta"
           >
