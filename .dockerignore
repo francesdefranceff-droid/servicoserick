@@ -1,4 +1,3 @@
-# Arquivos NÃO copiados para a imagem Docker
 node_modules
 dist
 .git
@@ -7,16 +6,11 @@ dist
 .venv
 __pycache__
 *.pyc
-*.pyo
 .pytest_cache
 test_reports
 tests
-.env
-.env.*
-*.env
-backend/.env
-backend/__pycache__
-backend/tests
+.env.local
+.env.*.local
 __MACOSX
 *.DS_Store
 .idea
