@@ -1,5 +1,5 @@
-import React, { useContext, useRef, useState } from 'react';
-import { X, ArrowLeft, Search, Wrench, Camera, Plus, Loader2 } from 'lucide-react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { X, ArrowLeft, Search, Wrench, Camera, Plus, Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '../ClonedAuthContext';
