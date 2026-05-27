@@ -8,6 +8,8 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Check, User, Briefcase, GraduationCap, Shield, Phone, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateSvcProfile, normalizeAuthUser } from '../lib/authProfile';
 
 export default function VolunteerRegisterPage() {
   const navigate = useNavigate();
@@ -126,42 +128,31 @@ export default function VolunteerRegisterPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-          role: 'volunteer',
-          languages,
-          professional_area: professionalArea,
-          professional_specialties: specialties.split(',').map(s => s.trim()).filter(Boolean),
-          availability,
-          experience,
-          education,
-          certifications: certifications.split(',').map(s => s.trim()).filter(Boolean),
-          professional_id: professionalId,
-          organization,
-          years_experience: yearsExperience,
-          help_types: helpTypes,
-          help_categories: helpCategories,
-          phone,
-          linkedin
-        })
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/volunteers`,
+          data: { display_name: name, role: 'helper' },
+        },
       });
+      if (error) throw error;
 
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.token, data.user);
+      if (data.session) {
+        const profile = await getOrCreateSvcProfile(data.user, {
+          display_name: name,
+          role: 'helper',
+          categories: helpCategories,
+        });
+        await login(data.session.access_token, normalizeAuthUser(data.user, profile));
         toast.success(t('registerSuccess'));
-        navigate('/volunteers');
+        navigate('/volunteers', { replace: true });
       } else {
-        toast.error(data.detail || t('registerError'));
+        toast.success('Verifique seu email para confirmar a conta');
+        navigate('/auth', { replace: true });
       }
     } catch (error) {
-      toast.error(t('connectionError'));
+      toast.error(error.message || t('registerError'));
     } finally {
       setLoading(false);
     }
