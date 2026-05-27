@@ -454,6 +454,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_phone: { Args: never; Returns: string }
+      get_my_svc_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          categories: string[]
+          city: string | null
+          created_at: string
+          display_name: string
+          id: string
+          lat: number | null
+          lng: number | null
+          phone: string | null
+          rating: number
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "svc_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
