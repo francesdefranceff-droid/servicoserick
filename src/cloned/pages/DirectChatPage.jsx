@@ -176,7 +176,7 @@ export default function DirectChatPage() {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) setOtherUser(await response.json());
+      if (response.ok && isJsonResponse(response)) setOtherUser(await response.json());
     } catch (error) { console.error(error); }
   };
 
@@ -185,7 +185,7 @@ export default function DirectChatPage() {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/posts`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) {
+      if (response.ok && isJsonResponse(response)) {
         const data = await response.json();
         setUserPosts(data.filter(p => p.user_id === userId));
       }
@@ -197,7 +197,7 @@ export default function DirectChatPage() {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/can-chat/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) {
+      if (response.ok && isJsonResponse(response)) {
         const data = await response.json();
         setCanChat(data.can_chat);
         if (!data.can_chat) setChatRestrictionReason(data.reason);
@@ -233,15 +233,15 @@ export default function DirectChatPage() {
     if (!input.trim() && !messageData.location && !messageData.media) return;
     setSending(true);
     const messageText = input || (messageData.location ? '📍 Localização compartilhada' : '📎 Mídia compartilhada');
-    const optimistic = {
-      id: `local-${Date.now()}`,
-      from_user_id: user?.id || 'preview-user',
-      to_user_id: userId,
-      message: messageText,
-      created_at: new Date().toISOString(),
-      ...messageData,
-    };
     try {
+      const optimistic = {
+        id: `local-${Date.now()}`,
+        from_user_id: currentUser?.id || 'preview-user',
+        to_user_id: userId,
+        message: messageText,
+        created_at: new Date().toISOString(),
+        ...messageData,
+      };
       const payload = { to_user_id: userId, message: messageText, ...messageData };
       let ok = false;
       try {
@@ -256,6 +256,9 @@ export default function DirectChatPage() {
       setShowMediaOptions(false);
       if (ok) fetchMessages();
       else setMessages((prev) => [...prev, optimistic]);
+    } catch (error) {
+      console.error(error);
+      toast.error('Não foi possível enviar a mensagem');
     } finally { setSending(false); }
   };
 
