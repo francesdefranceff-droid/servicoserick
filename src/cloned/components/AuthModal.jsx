@@ -3,6 +3,7 @@ import { X, ArrowLeft, Search, Wrench, Camera, Plus, Loader2 } from 'lucide-reac
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '../ClonedAuthContext';
+import { getOrCreateSvcProfile, normalizeAuthUser, updateSvcProfile } from '../lib/authProfile';
 
 /**
  * AuthModal — modal de login/cadastro inspirado nas referências
@@ -15,7 +16,7 @@ import { AuthContext } from '../ClonedAuthContext';
  *   onModeChange?: (mode) => void
  */
 export default function AuthModal({ open, onClose, mode = 'login', onModeChange }) {
-  const { login } = useContext(AuthContext);
+  const { login, refreshUser } = useContext(AuthContext);
 
   // login fields
   const [email, setEmail] = useState('');
@@ -55,11 +56,9 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      login(data.session?.access_token, {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.user_metadata?.display_name || data.user.email?.split('@')[0],
-      });
+      const profile = await getOrCreateSvcProfile(data.user);
+      await login(data.session?.access_token, normalizeAuthUser(data.user, profile));
+      await refreshUser?.();
       toast.success('Bem-vindo de volta!');
       onClose?.();
     } catch (err) {
@@ -96,20 +95,14 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
           .upload(path, avatarFile, { upsert: true });
         if (!upErr) {
           const { data: pub } = supabase.storage.from('svc-photos').getPublicUrl(path);
-          await supabase
-            .from('svc_profiles')
-            .update({ avatar_url: pub.publicUrl })
-            .eq('user_id', data.user.id);
+          await updateSvcProfile(data.user.id, { avatar_url: pub.publicUrl });
         }
       }
 
       if (data.session) {
-        login(data.session.access_token, {
-          id: data.user.id,
-          email: data.user.email,
-          name,
-          role,
-        });
+        const profile = await getOrCreateSvcProfile(data.user, { display_name: name, role, city: location });
+        await login(data.session.access_token, normalizeAuthUser(data.user, profile));
+        await refreshUser?.();
         toast.success('Conta criada!');
         onClose?.();
       } else {
