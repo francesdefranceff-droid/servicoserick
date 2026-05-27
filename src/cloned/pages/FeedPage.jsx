@@ -227,12 +227,59 @@ export default function FeedPage() {
       if (res.ok) {
         const data = await res.json();
         setPosts(Array.isArray(data) && data.length ? data : PREVIEW_POSTS);
-      } else {
-        setPosts(PREVIEW_POSTS);
+  const fetchPosts = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const authed = !!session?.session;
+
+      // 1) local posts always shown
+      const local = loadLocalPosts();
+
+      // 2) supabase posts when authenticated
+      let remote = [];
+      if (authed) {
+        const { data: svc } = await supabase
+          .from('svc_posts')
+          .select('*')
+          .eq('status', 'open')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        const ids = Array.from(new Set((svc ?? []).map(p => p.user_id)));
+        let profMap = {};
+        if (ids.length) {
+          const { data: profs } = await supabase
+            .from('svc_profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', ids);
+          (profs ?? []).forEach(p => { profMap[p.user_id] = p; });
+        }
+        remote = (svc ?? []).map(p => ({
+          id: p.id,
+          user_id: p.user_id,
+          type: p.post_type === 'volunteer' ? 'offer' : 'need',
+          category: p.category_slug || 'social',
+          title: p.title,
+          description: p.description,
+          images: p.photos || [],
+          videos: [],
+          budget: p.budget_range,
+          likes_count: 0,
+          comments_count: 0,
+          created_at: p.created_at,
+          location: { address: p.address || 'Paris', city: 'Paris' },
+          user: {
+            name: profMap[p.user_id]?.display_name || 'Usuário',
+            avatar: profMap[p.user_id]?.avatar_url,
+          },
+        }));
       }
+
+      const combined = [...local, ...remote];
+      setPosts(combined.length ? combined : PREVIEW_POSTS);
     } catch (e) {
       console.error('Failed to fetch posts', e);
-      setPosts(PREVIEW_POSTS);
+      const local = loadLocalPosts();
+      setPosts(local.length ? [...local, ...PREVIEW_POSTS] : PREVIEW_POSTS);
     }
   };
 
@@ -280,16 +327,14 @@ export default function FeedPage() {
       return;
     }
     files.forEach((file) => {
-      // MongoDB has 16MB doc limit; base64 grows ~33%, so 4MB raw = ~5.3MB base64.
       if (file.size > 4_000_000) {
         toast.error(`Vídeo muito grande (${(file.size / 1_000_000).toFixed(1)}MB). Máximo 4MB.`);
         e.target.value = '';
         return;
       }
-      // Warn about MOV/QuickTime (iPhone default) - Chrome desktop can't decode
       const mime = (file.type || '').toLowerCase();
       if (mime.includes('quicktime') || file.name.toLowerCase().endsWith('.mov')) {
-        toast.error('Formato MOV não roda em todos os navegadores. Use MP4 (Câmera → Configurações → Formato compatível).');
+        toast.error('Formato MOV não roda em todos os navegadores. Use MP4.');
         e.target.value = '';
         return;
       }
@@ -316,36 +361,58 @@ export default function FeedPage() {
     }
     setLoadingPost(true);
     try {
-      const payload = {
-        type: modalMode, // 'need' or 'offer'
+      const newPost = {
+        id: `local-${Date.now()}`,
+        user_id: user?.id || 'local-user',
+        type: modalMode,
         category: postCategory,
         title: postDescription.slice(0, 60),
         description: postDescription,
         images: selectedPhotos.map((p) => p.dataUrl),
         videos: selectedVideos.map((v) => v.dataUrl),
         budget: postBudget,
+        likes_count: 0,
+        comments_count: 0,
+        created_at: new Date().toISOString(),
         location: { address: postAddress, city: 'Paris' },
+        user: { name: user?.name || 'Você', avatar: user?.avatar },
       };
-      const res = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        toast.success(modalMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
-        setShowCreateModal(false);
-        fetchPosts();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || 'Erro ao publicar');
+
+      // Try to persist to Supabase if logged in
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session) {
+        const uid = session.session.user.id;
+        const { error } = await supabase.from('svc_posts').insert({
+          user_id: uid,
+          title: newPost.title,
+          description: newPost.description,
+          photos: newPost.images.filter(u => u && !u.startsWith('data:')),
+          budget_range: postBudget || null,
+          category_slug: postCategory || null,
+          address: postAddress || null,
+          post_type: modalMode === 'offer' ? 'volunteer' : 'paid',
+          status: 'open',
+        });
+        if (error) console.warn('svc_posts insert failed, keeping local only:', error.message);
       }
+
+      // Optimistic local persistence so the post always appears
+      const local = loadLocalPosts();
+      const updated = [newPost, ...local];
+      saveLocalPosts(updated);
+      setPosts((prev) => [newPost, ...prev]);
+
+      toast.success(modalMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
+      setShowCreateModal(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-      toast.error('Erro de conexão');
+      console.error(e);
+      toast.error('Erro ao publicar');
     } finally {
       setLoadingPost(false);
     }
   };
+
 
   const userAvatar = user?.avatar || `https://i.pravatar.cc/150?u=${user?.email || 'me'}`;
   const userInitial = (user?.name || 'U').charAt(0).toUpperCase();
