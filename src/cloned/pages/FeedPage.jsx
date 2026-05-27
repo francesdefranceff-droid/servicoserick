@@ -10,6 +10,16 @@ import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIco
 import VideoPlayer from '../components/VideoPlayer';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+// Local fallback store so the feed works even without auth/backend
+const LOCAL_KEY = 'cloned_feed_posts_v1';
+const loadLocalPosts = () => {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch { return []; }
+};
+const saveLocalPosts = (posts) => {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(posts.slice(0, 50))); } catch {}
+};
 
 const CATEGORY_OPTIONS = [
   { value: 'food', label: 'Alimentação' },
