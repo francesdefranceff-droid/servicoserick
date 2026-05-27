@@ -63,7 +63,7 @@ export default function ProfilePage() {
     setUploadingAvatar(true);
     try {
       const ext = file.name.split('.').pop();
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const path = `${user.id}/avatar.${ext}`;
       const { error: upErr } = await supabase.storage.from('svc-photos').upload(path, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from('svc-photos').getPublicUrl(path);
