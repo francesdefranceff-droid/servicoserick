@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.pix-brcode]
 verify_jwt = false
+
+[functions.jobs-search]
+verify_jwt = false

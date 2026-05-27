@@ -7,6 +7,7 @@ import BottomNav from '../components/BottomNav';
 import { Search, MapPin, Star, Clock, MessageCircle, Plus, Filter, Briefcase, Wrench, Home, Car, Utensils, Heart, GraduationCap, Monitor, Baby, Flower2, Package, MoreHorizontal, ExternalLink, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 // Plataformas de emprego externas (Brasil)
 const JOB_PLATFORMS = [
@@ -184,62 +185,42 @@ export default function JobsPage() {
     }
   };
 
-  // Buscar vagas externas (com fallback: backend de busca não disponível no preview)
+  // Buscar vagas via edge function (carrega resultados DENTRO do app)
   const searchExternalJobs = async (query, location, page = 1) => {
     setSearchLoading(true);
     try {
-      const translatedQuery = translateSearchTerm(query || 'emprego');
-      const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || '';
+      const q = (query || 'emprego').trim();
+      const loc = (location || 'Brasil').trim();
 
-      // Se não há backend configurado, pular fetch e ir direto para plataformas externas
-      if (!backendUrl) {
-        setExternalJobs([]);
-        setTotalJobs(0);
-        setCurrentPage(page);
-        setViewMode('platforms');
-        toast.info('Busque vagas direto nas plataformas brasileiras abaixo 👇');
-        return;
-      }
-
-      const params = new URLSearchParams({
-        query: translatedQuery,
-        location: location || 'Brasil',
-        page: page.toString(),
-        date_posted: 'all'
+      const { data, error } = await supabase.functions.invoke('jobs-search', {
+        body: { query: q, location: loc },
+        // Suporte a query string também
+        method: 'POST',
       });
 
-      const response = await fetch(`${backendUrl}/api/jobs/search?${params}`);
-      const contentType = response.headers.get('content-type') || '';
+      if (error) throw error;
 
-      if (response.ok && contentType.includes('application/json')) {
-        const data = await response.json();
-        setExternalJobs(data.jobs || []);
-        setTotalJobs(data.total || 0);
-        setCurrentPage(page);
+      const jobs = Array.isArray(data?.jobs) ? data.jobs : [];
+      setExternalJobs(jobs);
+      setTotalJobs(jobs.length);
+      setCurrentPage(page);
+      setViewMode('search');
 
-        if (data.jobs?.length > 0) {
-          toast.success(`${data.jobs.length} vagas encontradas!`);
-        } else {
-          toast.info('Nenhuma vaga encontrada. Tente nas plataformas abaixo.');
-          setViewMode('platforms');
-        }
+      if (jobs.length > 0) {
+        toast.success(`${jobs.length} vagas carregadas!`);
       } else {
-        // Backend indisponível — mostrar plataformas externas
-        setExternalJobs([]);
-        setTotalJobs(0);
-        setViewMode('platforms');
-        toast.info('Busque vagas direto nas plataformas brasileiras abaixo 👇');
+        toast.info('Nenhuma vaga encontrada. Tente outros termos.');
       }
-    } catch (error) {
-      console.warn('Busca direta indisponível, usando plataformas externas:', error);
+    } catch (err) {
+      console.error('Erro ao buscar vagas:', err);
+      toast.error('Não foi possível carregar as vagas. Tente novamente.');
       setExternalJobs([]);
       setTotalJobs(0);
-      setViewMode('platforms');
-      toast.info('Busque vagas direto nas plataformas brasileiras abaixo 👇');
     } finally {
       setSearchLoading(false);
     }
   };
+
 
 
   // Executar busca
@@ -549,49 +530,44 @@ export default function JobsPage() {
                           <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <MapPin size={12} />
-                              {job.location || 'França'}
+                              {job.location || 'Brasil'}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />
-                              {getTimeAgo(job.date_posted)}
-                            </span>
-                            {job.employment_type && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded-full">
-                                {job.employment_type}
+                            {job.posted && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} />
+                                {job.posted}
                               </span>
                             )}
-                            {job.source && (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">
-                                via {job.source}
+                            {(job.type || job.employment_type) && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-full">
+                                {job.type || job.employment_type}
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Salário se disponível */}
-                          {(job.salary_min || job.salary_max) && (
+                          {job.salary && (
                             <div className="mt-2 text-sm font-medium text-green-600">
-                              💰 {job.salary_min && `${job.salary_min.toLocaleString()}`}
-                              {job.salary_min && job.salary_max && ' - '}
-                              {job.salary_max && `${job.salary_max.toLocaleString()}`}
-                              {job.salary_currency && ` ${job.salary_currency}`}
+                              💰 {job.salary}
                             </div>
                           )}
-                          
+
                           {/* Descrição resumida */}
                           {job.description && (
                             <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                              {job.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
+                              {String(job.description).replace(/<[^>]*>/g, '').substring(0, 180)}
                             </p>
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Botão de candidatar */}
                       <div className="mt-3 flex gap-2">
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open(job.url, '_blank');
+                            const target = job.apply_url || job.url;
+                            if (target) window.open(target, '_blank');
                           }}
                           className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
                           size="sm"
