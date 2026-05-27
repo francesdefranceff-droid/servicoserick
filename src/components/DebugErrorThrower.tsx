@@ -1,29 +1,32 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * DebugErrorThrower
  *
- * Sem UI. Escuta o evento global "lovable-debug-error" e dispara um Error
- * de forma ASSÍNCRONA (via setTimeout) para que ele seja capturado pelo
- * window.onerror / overlay da Lovable, SEM destruir a árvore React.
+ * Sem UI. Escuta o evento global "lovable-debug-error", guarda a instrução
+ * em state e, durante o render, lança um Error real para que o overlay
+ * global da Lovable apareça com o botão "Try to Fix".
  *
- * Antes lançávamos durante o render, o que deixava a tela em branco até a
- * próxima edição. Esta versão mantém o "Try to Fix" funcional e preserva a
- * UI visível.
+ * DEVE ficar FORA de qualquer ErrorBoundary / Suspense.
+ * NÃO trocar o throw por setTimeout, console.error, toast ou qualquer
+ * tratamento — o throw síncrono no render é o que aciona o overlay nativo.
  */
 export const DebugErrorThrower = () => {
+  const [message, setMessage] = useState<string | null>(null);
+
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
       if (typeof detail !== "string" || detail.length === 0) return;
-      // Throw fora do ciclo de render — bubbla para window.onerror
-      setTimeout(() => {
-        throw new Error(detail);
-      }, 0);
+      setMessage(detail);
     };
     window.addEventListener("lovable-debug-error", handler as EventListener);
     return () => window.removeEventListener("lovable-debug-error", handler as EventListener);
   }, []);
+
+  if (message) {
+    throw new Error(message);
+  }
 
   return null;
 };
