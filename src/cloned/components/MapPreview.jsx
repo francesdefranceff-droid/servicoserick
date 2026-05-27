@@ -19,7 +19,7 @@ export default function MapPreview({ location, size = 'medium' }) {
     <div className="w-full space-y-2 my-3">
       {/* Mapa Visual Estilizado */}
       <div 
-        className={`${sizeClasses[size] || sizeClasses.medium} rounded-2xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 relative group cursor-pointer shadow-lg hover:shadow-xl transition-all`}
+        className={`${sizeClasses[size] || sizeClasses.medium} rounded-2xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-blue-100 via-blue-50 to-orange-100 relative group cursor-pointer shadow-lg hover:shadow-xl transition-all`}
         onClick={() => window.open(directUrl, '_blank')}
       >
         {/* Grid de fundo simulando mapa */}
@@ -70,7 +70,7 @@ export default function MapPreview({ location, size = 'medium' }) {
       </div>
       
       {/* Info da Localização */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-4 rounded-xl border-2 border-primary/20">
+      <div className="bg-gradient-to-r from-blue-50 to-orange-50 p-3 sm:p-4 rounded-xl border-2 border-primary/20">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="bg-primary/10 p-2 rounded-lg">

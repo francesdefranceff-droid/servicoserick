@@ -558,7 +558,7 @@ export default function FeedPage() {
       {showBanner && (
         <>
           {/* Mobile Premium banner (matches IMG_7748) */}
-          <div className="lg:hidden bg-rose-50 px-5 py-4 relative">
+          <div className="lg:hidden bg-orange-50 px-5 py-4 relative">
             <button
               onClick={() => setShowBanner(false)}
               className="absolute top-2 right-3 text-gray-500 hover:text-gray-900"
@@ -566,7 +566,7 @@ export default function FeedPage() {
             >
               <X className="w-4 h-4" />
             </button>
-            <p className="text-[13px] text-rose-400 italic text-center font-medium leading-tight pr-6">
+            <p className="text-[13px] text-orange-400 italic text-center font-medium leading-tight pr-6">
               Acesse novamente ferramentas e serviços exclusivos:
               <br />
               <span className="font-bold not-italic">torne-se Premier!</span>
@@ -762,7 +762,7 @@ export default function FeedPage() {
           className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative"
           data-testid="nav-publish-center"
         >
-          <div className="w-14 h-14 -mt-7 bg-[#8b5cf6] rounded-full flex items-center justify-center shadow-lg shadow-violet-500/40 hover:bg-[#7c3aed] transition-colors">
+          <div className="w-14 h-14 -mt-7 bg-[#8b5cf6] rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 hover:bg-[#7c3aed] transition-colors">
             <Plus className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
         </button>

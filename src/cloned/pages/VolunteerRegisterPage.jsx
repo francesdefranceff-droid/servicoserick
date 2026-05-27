@@ -166,7 +166,7 @@ export default function VolunteerRegisterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-4 sm:py-8 px-2 sm:px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50 py-4 sm:py-8 px-2 sm:px-4">
       <div className="container mx-auto max-w-4xl">
         <button
           onClick={() => navigate('/auth')}
@@ -489,7 +489,7 @@ export default function VolunteerRegisterPage() {
               </div>
 
               {/* NOVA SEÇÃO: Categorias de Ajuda */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-2xl border-2 border-blue-200">
+              <div className="bg-gradient-to-br from-blue-50 to-orange-50 p-5 rounded-2xl border-2 border-blue-200">
                 <Label className="text-base font-bold mb-3 flex items-center gap-2">
                   <span className="text-red-500">*</span>
                   <span className="text-2xl">🎯</span>

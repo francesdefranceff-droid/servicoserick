@@ -72,9 +72,9 @@ export default function ServicesPage() {
       food: 'bg-green-100 text-green-700',
       legal: 'bg-blue-100 text-blue-700',
       health: 'bg-red-100 text-red-700',
-      housing: 'bg-purple-100 text-purple-700',
+      housing: 'bg-orange-100 text-orange-700',
       work: 'bg-yellow-100 text-yellow-700',
-      education: 'bg-indigo-100 text-indigo-700'
+      education: 'bg-orange-100 text-orange-700'
     };
     return colors[cat] || 'bg-gray-100 text-gray-700';
   };

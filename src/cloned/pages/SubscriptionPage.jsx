@@ -237,7 +237,7 @@ export default function SubscriptionPage() {
                 <h3 className="px-3 pt-3 pb-2 text-sm font-bold text-gray-900 flex items-center gap-2">
                   {sec.section}
                   {sec.pro && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-200 text-violet-800">PRO</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-200 text-orange-800">PRO</span>
                   )}
                 </h3>
                 <div className="space-y-0.5">

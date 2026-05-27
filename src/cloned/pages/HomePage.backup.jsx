@@ -36,10 +36,10 @@ export default function HomePage() {
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200' },
     { value: 'legal', label: t('legal'), color: 'bg-blue-100 text-blue-700 border-blue-200' },
     { value: 'health', label: t('health'), color: 'bg-red-100 text-red-700 border-red-200' },
-    { value: 'housing', label: t('housing'), color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    { value: 'housing', label: t('housing'), color: 'bg-orange-100 text-orange-700 border-orange-200' },
     { value: 'work', label: t('work'), color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-    { value: 'education', label: t('education'), color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-    { value: 'social', label: t('social'), color: 'bg-pink-100 text-pink-700 border-pink-200' }
+    { value: 'education', label: t('education'), color: 'bg-orange-100 text-orange-700 border-orange-200' },
+    { value: 'social', label: t('social'), color: 'bg-orange-100 text-orange-700 border-orange-200' }
   ];
 
   useEffect(() => {

@@ -115,7 +115,7 @@ ${js}
     return (
       <div className="h-screen flex items-center justify-center bg-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-white text-lg">Carregando projeto...</p>
         </div>
       </div>
@@ -156,7 +156,7 @@ ${js}
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
           >
             <Save className="w-4 h-4" />
             {isSaving ? 'Salvando...' : 'Salvar'}

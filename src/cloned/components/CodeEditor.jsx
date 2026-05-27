@@ -23,7 +23,7 @@ const CodeEditor = ({ html, css, js, onHtmlChange, onCssChange, onJsChange }) =>
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-purple-400 border-b-2 border-purple-500 bg-slate-700'
+                  ? 'text-orange-400 border-b-2 border-orange-500 bg-slate-700'
                   : 'text-gray-400 hover:text-white hover:bg-slate-700'
               }`}
             >
@@ -37,7 +37,7 @@ const CodeEditor = ({ html, css, js, onHtmlChange, onCssChange, onJsChange }) =>
         <textarea
           value={activeTabData.value}
           onChange={(e) => activeTabData.onChange(e.target.value)}
-          className="w-full h-full p-4 font-mono text-sm bg-slate-800 border border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-100"
+          className="w-full h-full p-4 font-mono text-sm bg-slate-800 border border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-100"
           placeholder={`Digite seu código ${activeTabData.label} aqui...`}
           spellCheck="false"
         />
