@@ -449,8 +449,8 @@ export default function FeedPage() {
                 W
               </div>
               <span className="text-base font-extrabold leading-tight">
-                <span className="text-green-500">Wati</span>
-                <span className="text-orange-500">zat</span>
+                <span className="text-green-500">PertoDeMim</span>
+                <span className="text-orange-500">Servicos</span>
               </span>
             </div>
 
