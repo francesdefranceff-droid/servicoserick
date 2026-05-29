@@ -34,7 +34,6 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [viewers, setViewers] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => saveStories(stories), [stories]);
 
@@ -110,13 +109,37 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
 
   return (
     <div className="relative py-2 overflow-visible">
+      <div className="mb-3 flex flex-wrap items-center gap-2 overflow-visible">
+        <button
+          type="button"
+          onClick={onAddStory}
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"
+        >
+          <ImagePlus size={16} />
+          Publicar story
+        </button>
+        <button
+          type="button"
+          onClick={live ? stopLive : startLive}
+          className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 ${live ? 'bg-red-500' : 'bg-orange-500'}`}
+        >
+          <Radio size={16} />
+          {live ? 'Encerrar ao vivo' : 'Iniciar ao vivo'}
+        </button>
+        {live && (
+          <span className="inline-flex h-10 items-center rounded-full bg-red-50 px-3 text-xs font-semibold text-red-600">
+            {viewers} espectadores
+          </span>
+        )}
+      </div>
+
       <div className="flex items-center gap-3 overflow-x-auto overflow-y-visible no-scrollbar pb-1">
-        {/* Botão único: Story + Ao vivo (menu) */}
+        {/* Seu story */}
         <div className="relative flex-shrink-0">
           <button
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={onAddStory}
             className="flex flex-col items-center gap-1"
-            title="Publicar story ou iniciar ao vivo"
+            title="Publicar story"
           >
             <div className={`relative w-16 h-16 rounded-full p-[2px] ${live ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600'}`}>
               <div className="w-full h-full rounded-full bg-white p-[2px]">
@@ -137,35 +160,8 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
                 </span>
               )}
             </div>
-            <span className="text-xs text-textPrimary">{live ? 'Encerrar' : 'Story / Ao vivo'}</span>
+            <span className="text-xs text-textPrimary">Seu story</span>
           </button>
-
-          {menuOpen && !live && (
-            <div className="fixed left-3 right-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[9999] bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 py-3 sm:absolute sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-20 sm:w-52 sm:-translate-x-1/2 sm:rounded-xl">
-              <button
-                onClick={() => { setMenuOpen(false); onAddStory(); }}
-                className="w-full px-5 py-4 sm:py-2 text-left text-base sm:text-sm hover:bg-gray-50 flex items-center gap-3"
-              >
-                <ImagePlus size={16} className="text-primary" /> Publicar story
-              </button>
-              <button
-                onClick={() => { setMenuOpen(false); startLive(); }}
-                className="w-full px-5 py-4 sm:py-2 text-left text-base sm:text-sm hover:bg-gray-50 flex items-center gap-3"
-              >
-                <Radio size={16} className="text-red-500" /> Iniciar ao vivo
-              </button>
-            </div>
-          )}
-          {menuOpen && live && (
-            <div className="fixed left-3 right-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[9999] bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 py-3 sm:absolute sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-20 sm:w-52 sm:-translate-x-1/2 sm:rounded-xl">
-              <button
-                onClick={() => { setMenuOpen(false); stopLive(); }}
-                className="w-full px-5 py-4 sm:py-2 text-left text-base sm:text-sm hover:bg-gray-50 flex items-center gap-3 text-red-600"
-              >
-                <Radio size={16} /> Encerrar transmissão
-              </button>
-            </div>
-          )}
         </div>
 
 
