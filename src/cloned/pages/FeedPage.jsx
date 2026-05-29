@@ -1221,24 +1221,130 @@ export default function FeedPage() {
       {/* ============ DEMANDA PUBLICA MODAL ============ */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent
-          className="max-w-md p-0 overflow-hidden rounded-2xl border-2 border-blue-500 max-h-[90vh] overflow-y-auto"
+          className={createModalFocus === 'video'
+            ? "max-w-md p-0 overflow-hidden rounded-2xl border-0 bg-black text-white max-h-[92vh] overflow-y-auto"
+            : "max-w-md p-0 overflow-hidden rounded-2xl border-2 border-blue-500 max-h-[90vh] overflow-y-auto"}
           data-testid="demanda-modal"
         >
+          {createModalFocus === 'video' ? (
+            // ========= TikTok-style video publish UI =========
+            <div className="flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <button onClick={() => setShowCreateModal(false)} className="text-white/80 text-sm">Cancelar</button>
+                <div className="font-bold text-base">Publicar</div>
+                <button
+                  onClick={() => handlePostSubmit()}
+                  disabled={loadingPost || selectedVideos.length === 0 || !postDescription.trim()}
+                  data-testid="tiktok-publish"
+                  className="text-sm font-bold text-pink-500 disabled:text-white/30"
+                >
+                  {loadingPost ? '...' : 'Postar'}
+                </button>
+              </div>
+
+              {/* Vertical preview 9:16 */}
+              <div className="px-4 pt-4">
+                <div className="relative mx-auto w-full max-w-[260px] aspect-[9/16] rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
+                  {selectedVideos.length > 0 ? (
+                    <>
+                      <VideoPlayer src={selectedVideos[0].dataUrl} className="w-full h-full object-cover" testid="tiktok-video-preview" />
+                      <button
+                        onClick={() => removeVideo(selectedVideos[0].id)}
+                        className="absolute top-2 right-2 w-7 h-7 bg-black/60 text-white rounded-full grid place-items-center"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      {/* Overlay text preview */}
+                      <div className="absolute bottom-3 left-3 right-12 text-white text-xs drop-shadow">
+                        <div className="font-bold">@você</div>
+                        <div className="line-clamp-2 opacity-90">{postDescription || 'Sua legenda aparece aqui...'}</div>
+                      </div>
+                    </>
+                  ) : (
+                    <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer gap-2 text-white/70" data-testid="tiktok-video-slot">
+                      <div className="w-14 h-14 rounded-full bg-pink-500/20 grid place-items-center">
+                        <Film className="w-7 h-7 text-pink-400" />
+                      </div>
+                      <span className="text-sm font-semibold">Selecionar vídeo</span>
+                      <span className="text-[11px] opacity-60">MP4 · até 50MB · vertical 9:16</span>
+                      <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Caption */}
+              <div className="px-4 pt-4">
+                <textarea
+                  value={postDescription}
+                  onChange={(e) => setPostDescription(e.target.value.slice(0, 250))}
+                  placeholder="Descreva seu vídeo, adicione #hashtags e @amigos"
+                  rows={3}
+                  data-testid="tiktok-caption"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-pink-500 resize-none"
+                />
+                <div className="text-right text-[11px] text-white/40 mt-1">{postDescription.length}/250</div>
+              </div>
+
+              {/* TikTok-like option rows */}
+              <div className="mx-4 mt-2 rounded-xl bg-zinc-900 border border-white/10 divide-y divide-white/10">
+                <button className="w-full flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="flex items-center gap-2 text-white/80"><MapPin className="w-4 h-4" /> Localização</span>
+                  <span className="text-white/40 text-xs truncate max-w-[140px]">{postAddress || 'Adicionar'}</span>
+                </button>
+                <div className="px-4 py-3">
+                  <label className="block text-xs text-white/60 mb-1">Categoria</label>
+                  <select
+                    value={postCategory}
+                    onChange={(e) => setPostCategory(e.target.value)}
+                    className="w-full bg-transparent text-sm text-white focus:outline-none"
+                  >
+                    <option value="" className="text-black">Selecione</option>
+                    {CATEGORY_OPTIONS.map((c) => (
+                      <option key={c.value} value={c.value} className="text-black">{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <button className="w-full flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="text-white/80">Quem pode ver</span>
+                  <span className="text-white/60 text-xs">Todos ▾</span>
+                </button>
+                <button className="w-full flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="text-white/80">Permitir comentários</span>
+                  <span className="text-pink-500 text-xs font-bold">ON</span>
+                </button>
+              </div>
+
+              {/* Bottom actions */}
+              <div className="flex gap-2 p-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-zinc-900 border-white/10 text-white hover:bg-zinc-800 rounded-full h-11"
+                  onClick={() => { setShowCreateModal(false); }}
+                >
+                  Rascunhos
+                </Button>
+                <Button
+                  onClick={() => handlePostSubmit()}
+                  disabled={loadingPost || selectedVideos.length === 0 || !postDescription.trim()}
+                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white rounded-full h-11 font-bold disabled:opacity-50"
+                  data-testid="tiktok-publish-bottom"
+                >
+                  {loadingPost ? 'Publicando...' : 'Publicar'}
+                </Button>
+              </div>
+            </div>
+          ) : (
           <div className="p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
                 <span className="inline-flex w-7 h-7 rounded-full bg-gray-100 items-center justify-center">
                   <MapPin className="w-4 h-4 text-gray-700" />
                 </span>
-                {createModalFocus === 'video' ? 'Publicar vídeo' : 'Demanda pública'}
+                Demanda pública
               </div>
             </div>
-
-            {createModalFocus === 'video' && (
-              <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-xs text-green-800">
-                Escolha um vídeo curto para aparecer no Storeteck e adicione uma descrição.
-              </div>
-            )}
 
             {/* Toggle: demanda paga vs ajuda voluntária */}
             <div className="flex gap-2 mb-5 bg-gray-100 p-1 rounded-full">
@@ -1265,7 +1371,7 @@ export default function FeedPage() {
               <textarea
                 value={postDescription}
                 onChange={(e) => setPostDescription(e.target.value.slice(0, 250))}
-                placeholder={createModalFocus === 'video' ? 'Descreva seu vídeo...' : 'Olá,'}
+                placeholder="Olá,"
                 rows={4}
                 className="w-full text-sm border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                 data-testid="modal-description"
@@ -1412,6 +1518,7 @@ export default function FeedPage() {
               {loadingPost ? 'Publicando...' : 'Postar minha demanda'}
             </Button>
           </div>
+          )}
         </DialogContent>
       </Dialog>
       <SupportChatWidget />
