@@ -1222,7 +1222,7 @@ export default function FeedPage() {
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent
           className={createModalFocus === 'video'
-            ? "max-w-md p-0 overflow-hidden rounded-2xl border-0 bg-black text-white max-h-[92vh] overflow-y-auto"
+            ? "p-0 overflow-hidden bg-black text-white border-0 rounded-none w-screen h-screen max-w-none sm:max-w-none translate-x-0 translate-y-0 left-0 top-0 fixed inset-0 overflow-y-auto"
             : "max-w-md p-0 overflow-hidden rounded-2xl border-2 border-blue-500 max-h-[90vh] overflow-y-auto"}
           data-testid="demanda-modal"
         >
