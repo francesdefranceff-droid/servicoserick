@@ -726,12 +726,12 @@ export default function DirectChatPage() {
                           <div
                             className={`max-w-[70%] px-4 py-2.5 ${
                               isMe
-                                ? 'bg-[#16a34a] text-white rounded-2xl rounded-br-md'
-                                : 'bg-gray-100 text-gray-900 rounded-2xl rounded-bl-md'
+                                ? 'bg-[#d9e9ff] text-[#0a2540] rounded-2xl rounded-br-md'
+                                : 'bg-white border border-gray-200 text-gray-900 rounded-2xl rounded-bl-md'
                             }`}
                           >
                             {msg.location && (
-                              <div className={`mb-2 p-2 rounded-xl ${isMe ? 'bg-white/20' : 'bg-white'}`}>
+                              <div className={`mb-2 p-2 rounded-xl ${isMe ? 'bg-white/40' : 'bg-gray-50'}`}>
                                 <MapPreview location={msg.location} size="small" />
                               </div>
                             )}
@@ -746,13 +746,14 @@ export default function DirectChatPage() {
                               </div>
                             )}
                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.message}</p>
-                            <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
+                            <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-[#0a2540]/60' : 'text-gray-400'}`}>
                               <span className="text-[10px]">
                                 {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               {isMe && <CheckCheck size={12} />}
                             </div>
                           </div>
+
                         </div>
                       );
                     })}
