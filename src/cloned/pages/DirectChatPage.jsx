@@ -129,7 +129,11 @@ export default function DirectChatPage() {
   const [activeModal, setActiveModal] = useState(null); // 'refuse' | 'schedule' | 'payment' | 'more' | null
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleEndTime, setScheduleEndTime] = useState('');
+  const [scheduleMode, setScheduleMode] = useState('call'); // call | request_address | other_address
+  const [scheduleAddress, setScheduleAddress] = useState('');
   const [scheduleNote, setScheduleNote] = useState('');
+  const [paymentTab, setPaymentTab] = useState('pay'); // pay | request
   const [payAmount, setPayAmount] = useState('');
   const [payDescription, setPayDescription] = useState('');
   const [pixCharge, setPixCharge] = useState(null); // {brcode, qr_code_base64}
@@ -229,11 +233,15 @@ export default function DirectChatPage() {
       const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
       if (Number.isNaN(d.getTime())) throw new Error('Data ou hora inválida');
       const formatted = d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      const msg = `📅 Agendamento proposto: ${formatted}${scheduleNote ? `\n📝 ${scheduleNote}` : ''}`;
+      const modeLabel = scheduleMode === 'call' ? '📞 Chamada de voz/vídeo'
+        : scheduleMode === 'request_address' ? '📍 No endereço da solicitação'
+        : `📍 Outro endereço: ${scheduleAddress || '(a confirmar)'}`;
+      const endPart = scheduleEndTime ? ` até ${scheduleEndTime}` : '';
+      const msg = `📅 Agendamento proposto: ${formatted}${endPart}\n${modeLabel}${scheduleNote ? `\n📝 ${scheduleNote}` : ''}`;
       await sendSystemMessage(msg);
       toast.success('Agendamento enviado!');
       setActiveModal(null);
-      setScheduleDate(''); setScheduleTime(''); setScheduleNote('');
+      setScheduleDate(''); setScheduleTime(''); setScheduleEndTime(''); setScheduleNote(''); setScheduleAddress(''); setScheduleMode('call');
     } catch (error) {
       console.error('[chat] erro ao agendar:', error);
       toast.error(error?.message || 'Erro ao agendar');
@@ -942,37 +950,85 @@ export default function DirectChatPage() {
 
       {activeModal === 'schedule' && (
         <ModalShell title="Agendar visita / serviço" onClose={() => setActiveModal(null)}>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Data</label>
+              <label className="text-sm font-semibold text-gray-800 mb-1.5 block">Data</label>
               <input
                 type="date"
                 value={scheduleDate}
                 onChange={(e) => setScheduleDate(e.target.value)}
                 min={new Date().toISOString().slice(0, 10)}
                 data-testid="schedule-date"
-                className="w-full h-11 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full h-12 px-4 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
               />
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Hora</label>
-              <input
-                type="time"
-                value={scheduleTime}
-                onChange={(e) => setScheduleTime(e.target.value)}
-                data-testid="schedule-time"
-                className="w-full h-11 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-semibold text-gray-800 mb-1.5 block">Hora de início</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  data-testid="schedule-time"
+                  className="w-full h-12 px-4 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-gray-800 mb-1.5 block">Hora de fim</label>
+                <input
+                  type="time"
+                  value={scheduleEndTime}
+                  onChange={(e) => setScheduleEndTime(e.target.value)}
+                  data-testid="schedule-end-time"
+                  className="w-full h-12 px-4 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
             </div>
+
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Observação (opcional)</label>
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">Modalidade do encontro</h4>
+              <div className="space-y-2">
+                {[
+                  { id: 'call', label: 'Chamada de voz ou vídeo', badge: 'NOVO' },
+                  { id: 'request_address', label: 'Endereço da solicitação' },
+                  { id: 'other_address', label: 'Outro endereço' },
+                ].map((opt) => (
+                  <label key={opt.id} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition ${scheduleMode === opt.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="schedule-mode"
+                      checked={scheduleMode === opt.id}
+                      onChange={() => setScheduleMode(opt.id)}
+                      className="w-4 h-4 accent-green-600"
+                    />
+                    <span className="text-sm text-gray-900 flex-1">{opt.label}</span>
+                    {opt.badge && <span className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">{opt.badge}</span>}
+                  </label>
+                ))}
+              </div>
+              {scheduleMode === 'other_address' && (
+                <input
+                  type="text"
+                  value={scheduleAddress}
+                  onChange={(e) => setScheduleAddress(e.target.value)}
+                  placeholder="Digite o endereço completo"
+                  className="mt-2 w-full h-11 px-4 border border-gray-300 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-semibold text-gray-800">Informações práticas</label>
+                <span className="text-xs text-gray-400">Opcional</span>
+              </div>
               <Textarea
                 value={scheduleNote}
                 onChange={(e) => setScheduleNote(e.target.value)}
                 placeholder="Ex: chegarei pela entrada lateral, levarei ferramentas..."
-                rows={2}
+                rows={3}
                 data-testid="schedule-note"
-                className="resize-none border-gray-300 rounded-xl text-sm"
+                className="resize-none border-gray-300 rounded-2xl text-sm"
               />
             </div>
           </div>
@@ -985,16 +1041,61 @@ export default function DirectChatPage() {
               onClick={handleSchedule}
               disabled={loadingAction || !scheduleDate || !scheduleTime}
               data-testid="schedule-confirm"
-              className="flex-1 h-11 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-60"
+              className="flex-1 h-11 rounded-full bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-60"
             >{loadingAction ? 'Enviando...' : 'Propor horário'}</button>
           </div>
         </ModalShell>
       )}
 
       {activeModal === 'payment' && (
-        <ModalShell title={pixCharge ? 'PIX gerado!' : 'Cobrar via PIX'} onClose={closePaymentModal}>
-          {!pixCharge ? (
+        <ModalShell title="Pagamento" onClose={closePaymentModal}>
+          {/* Abas estilo Stripe */}
+          <div className="flex bg-gray-100 p-1 rounded-full mb-5">
+            <button
+              onClick={() => setPaymentTab('pay')}
+              className={`flex-1 h-10 rounded-full text-sm font-semibold transition ${paymentTab === 'pay' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+            >Pagar</button>
+            <button
+              onClick={() => setPaymentTab('request')}
+              className={`flex-1 h-10 rounded-full text-sm font-semibold transition ${paymentTab === 'request' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+            >Solicitar pagamento</button>
+          </div>
+
+          {paymentTab === 'pay' ? (
+            <div className="text-center">
+              <div className="w-32 h-32 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                <CreditCard className="w-14 h-14 text-emerald-700" strokeWidth={1.5} />
+              </div>
+              <h3 className="font-bold text-gray-900 text-lg flex items-center justify-center gap-2">
+                Pagamento por cartão com
+                <span className="text-indigo-600 font-extrabold">stripe</span>
+              </h3>
+              <p className="text-sm text-gray-600 mt-2 mb-5 leading-relaxed">
+                Pague suas prestações com segurança, direto pelo cartão. Os fundos são liberados ao prestador após a confirmação do serviço.
+              </p>
+              <button
+                onClick={() => toast.info('Pagamento por cartão em breve')}
+                className="w-full h-12 rounded-full bg-emerald-500 text-white font-semibold hover:bg-emerald-600"
+              >Pagar com cartão</button>
+              <button
+                onClick={() => { setPaymentTab('request'); }}
+                className="w-full h-11 mt-2 rounded-full border border-gray-300 font-medium hover:bg-gray-50 text-sm"
+              >Prefiro usar PIX</button>
+            </div>
+          ) : !pixCharge ? (
             <>
+              <div className="text-center mb-4">
+                <div className="w-24 h-24 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                  <CreditCard className="w-10 h-10 text-emerald-700" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-bold text-gray-900 flex items-center justify-center gap-2">
+                  Receba por cartão com
+                  <span className="text-indigo-600 font-extrabold">stripe</span>
+                </h3>
+                <p className="text-xs text-gray-600 mt-1.5 leading-relaxed">
+                  Ganhe tempo! Receba pelo cartão e o valor cai direto na sua conta. (Custo: 1% por pagamento recebido)
+                </p>
+              </div>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Valor (R$)</label>
