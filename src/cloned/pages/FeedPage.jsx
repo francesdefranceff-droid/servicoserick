@@ -1000,12 +1000,12 @@ export default function FeedPage() {
 
       {/* Storeteck — vídeos curtos estilo TikTok */}
       <section className="max-w-[1200px] mx-auto px-3 lg:px-4 py-3" data-testid="storeteck-reels">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Film className="w-4 h-4 text-green-600" /> Storeteck
             <span className="text-[10px] uppercase tracking-wide bg-red-500 text-white px-1.5 py-0.5 rounded">novo</span>
           </h3>
-          <button onClick={() => navigate('/home?openSOS=1')} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 shadow-sm">
+          <button onClick={() => navigate('/home?openSOS=1')} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-green-600 px-4 text-sm font-bold text-white shadow-sm hover:bg-green-700">
             <Film className="w-3.5 h-3.5" /> Publicar vídeo
           </button>
         </div>
