@@ -336,7 +336,8 @@ export default function MessagesPage() {
 
         {/* Center: Conversation messages */}
         <section
-          className={`${activeUserId ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-gray-50 min-w-0`}
+          className={`${activeUserId ? 'flex' : 'hidden lg:flex'} flex-1 flex-col min-w-0`}
+          style={{ backgroundColor: '#eff5ff' }}
           data-testid="conversation-area"
         >
           {!activeUserId ? (
@@ -360,9 +361,25 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-green-50/40 to-white">
+              {/* Banner "Solicitação privada" estilo AlloVoisins */}
+              <div className="px-4 pt-4">
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-bold text-[#0a2540] flex items-center gap-2">
+                      <span className="w-5 h-5 inline-flex items-center justify-center">👥</span>
+                      Solicitação privada
+                    </p>
+                    <span className="text-[11px] text-gray-500">postada em {formatDate(messages[0]?.created_at || new Date())}</span>
+                  </div>
+                  <p className="text-sm text-[#0a2540] line-clamp-2">
+                    Olá {activeUser?.name || ''}, conversa direta sobre seu serviço. Combine detalhes, agende e finalize com segurança aqui no chat.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {messages.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm mt-8">Nenhuma mensagem ainda. Diga olá!</p>
+                  <p className="text-center text-[#0a2540]/60 text-sm mt-8">Nenhuma mensagem ainda. Diga olá!</p>
                 ) : (
                   messages.map((m, idx) => {
                     const fromMe = m.is_from_me || m.from_user_id === user?.id;
@@ -372,22 +389,22 @@ export default function MessagesPage() {
                       <React.Fragment key={m.id || idx}>
                         {showDay && (
                           <div className="flex justify-center my-4">
-                            <span className="text-xs text-gray-500 font-medium px-3 py-1 bg-white/80 rounded-full border border-gray-100">
+                            <span className="text-xs text-[#0a2540] font-medium">
                               {formatDaySeparator(m.created_at)}
                             </span>
                           </div>
                         )}
                         <div className={`flex ${fromMe ? 'justify-end' : 'justify-start'}`}>
                           <div
-                            className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
+                            className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                               fromMe
-                                ? 'bg-green-500 text-white rounded-tr-md'
-                                : 'bg-white border border-gray-200 text-gray-900 rounded-tl-md'
+                                ? 'bg-[#d9e9ff] text-[#0a2540] rounded-tr-md border border-[#b9d5ff]'
+                                : 'bg-white border border-gray-200 text-[#0a2540] rounded-tl-md'
                             }`}
                             data-testid={`msg-${idx}`}
                           >
                             <p className="whitespace-pre-wrap break-words">{m.message}</p>
-                            <p className={`text-[10px] mt-1 ${fromMe ? 'text-white/80' : 'text-gray-500'}`}>
+                            <p className={`text-[10px] mt-1 ${fromMe ? 'text-[#0a2540]/60' : 'text-gray-500'} text-right`}>
                               {formatTime(m.created_at)}
                             </p>
                           </div>
@@ -398,6 +415,7 @@ export default function MessagesPage() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
+
 
               {/* Quick actions bar */}
               <div className="bg-white border-t border-gray-200 px-4 pt-3 pb-1">
