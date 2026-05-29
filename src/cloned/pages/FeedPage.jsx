@@ -377,6 +377,7 @@ export default function FeedPage() {
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalMode, setModalMode] = useState('need'); // 'need' (Demanda pública) | 'offer' (Serviço voluntário)
+  const [createModalFocus, setCreateModalFocus] = useState('post'); // 'post' | 'video'
 
   // Form fields
   const [postDescription, setPostDescription] = useState('');
@@ -496,8 +497,9 @@ export default function FeedPage() {
     }
   };
 
-  const resetCreateModal = (mode) => {
+  const resetCreateModal = (mode, focus = 'post') => {
     setModalMode(mode);
+    setCreateModalFocus(focus);
     setPostDescription('');
     setPostBudget(mode === 'need' ? 'Sob orçamento' : 'A combinar');
     setPostCategory('reformas');
@@ -550,22 +552,22 @@ export default function FeedPage() {
     });
   };
 
-  const requireLoginForPublish = (mode = 'need') => {
+  const requireLoginForPublish = (mode = 'need', focus = 'post') => {
     toast.info('Você pode publicar agora. Para salvar na conta, faça login depois.');
-    resetCreateModal(mode);
+    resetCreateModal(mode, focus);
   };
 
-  const openModal = async (mode) => {
+  const openModal = async (mode, focus = 'post') => {
     try {
       const activeUser = await getActivePublishUser(user);
       if (activeUser) {
-        resetCreateModal(mode);
+        resetCreateModal(mode, focus);
         return;
       }
     } catch (error) {
       console.warn('publish auth check failed', error);
     }
-    requireLoginForPublish(mode);
+    requireLoginForPublish(mode, focus);
   };
 
   useEffect(() => {
@@ -716,6 +718,10 @@ export default function FeedPage() {
 
   const handlePostSubmit = async (modeOverride) => {
     const publishMode = modeOverride || modalMode;
+    if (createModalFocus === 'video' && selectedVideos.length === 0) {
+      toast.error('Adicione um vídeo para publicar no Storeteck');
+      return;
+    }
     if (!postDescription.trim()) {
       toast.error('Adicione uma descrição');
       return;
@@ -1005,7 +1011,7 @@ export default function FeedPage() {
             <Film className="w-4 h-4 text-green-600" /> Storeteck
             <span className="text-[10px] uppercase tracking-wide bg-red-500 text-white px-1.5 py-0.5 rounded">novo</span>
           </h3>
-          <button onClick={() => navigate('/home?openSOS=1')} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-green-600 px-4 text-sm font-bold text-white shadow-sm hover:bg-green-700">
+          <button onClick={() => openModal('need', 'video')} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-green-600 px-4 text-sm font-bold text-white shadow-sm hover:bg-green-700" data-testid="storeteck-publish-video">
             <Film className="w-3.5 h-3.5" /> Publicar vídeo
           </button>
         </div>
@@ -1224,9 +1230,15 @@ export default function FeedPage() {
                 <span className="inline-flex w-7 h-7 rounded-full bg-gray-100 items-center justify-center">
                   <MapPin className="w-4 h-4 text-gray-700" />
                 </span>
-                Demanda pública
+                {createModalFocus === 'video' ? 'Publicar vídeo' : 'Demanda pública'}
               </div>
             </div>
+
+            {createModalFocus === 'video' && (
+              <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-xs text-green-800">
+                Escolha um vídeo curto para aparecer no Storeteck e adicione uma descrição.
+              </div>
+            )}
 
             {/* Toggle: demanda paga vs ajuda voluntária */}
             <div className="flex gap-2 mb-5 bg-gray-100 p-1 rounded-full">
@@ -1253,7 +1265,7 @@ export default function FeedPage() {
               <textarea
                 value={postDescription}
                 onChange={(e) => setPostDescription(e.target.value.slice(0, 250))}
-                placeholder="Olá,"
+                placeholder={createModalFocus === 'video' ? 'Descreva seu vídeo...' : 'Olá,'}
                 rows={4}
                 className="w-full text-sm border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                 data-testid="modal-description"
