@@ -24,6 +24,7 @@ import JobsPage from './pages/JobsPage';
 import HousingPage from './pages/HousingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import PublishFab from './components/PublishFab';
+import BoasPraticasPage from './pages/BoasPraticasPage';
 
 export const AuthContext = React.createContext();
 
