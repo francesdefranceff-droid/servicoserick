@@ -1,7 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Plus, Radio, X, Video, VideoOff, Mic, MicOff, ImagePlus } from 'lucide-react';
+import { Plus, Radio, X, Video, VideoOff, Mic, MicOff, ImagePlus, Heart, MessageCircle, Send, Info } from 'lucide-react';
 
 const STORAGE_KEY = 'svc:stories:v1';
+
+// Mock de amigos conectados (stories de outras pessoas)
+const FRIEND_STORIES = [
+  { id: 'f1', userName: 'Ana', avatar: 'https://i.pravatar.cc/100?img=47', type: 'image', src: 'https://images.unsplash.com/photo-1503264116251-35a269479413?w=600' },
+  { id: 'f2', userName: 'Bruno', avatar: 'https://i.pravatar.cc/100?img=12', type: 'image', src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600' },
+  { id: 'f3', userName: 'Carla', avatar: 'https://i.pravatar.cc/100?img=32', type: 'image', src: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600' },
+  { id: 'f4', userName: 'Diego', avatar: 'https://i.pravatar.cc/100?img=15', type: 'image', src: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600' },
+];
 
 function loadStories() {
   try {
@@ -9,7 +17,6 @@ function loadStories() {
     if (!raw) return [];
     const list = JSON.parse(raw);
     const now = Date.now();
-    // Stories expire after 24h, like Instagram
     return list.filter((s) => now - s.createdAt < 24 * 60 * 60 * 1000);
   } catch {
     return [];
@@ -24,12 +31,22 @@ function saveStories(list) {
   }
 }
 
+function formatBytes(bytes) {
+  if (!bytes) return '—';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
   const fileRef = useRef(null);
   const liveVideoRef = useRef(null);
   const liveStreamRef = useRef(null);
   const [stories, setStories] = useState(loadStories);
   const [viewing, setViewing] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [reply, setReply] = useState('');
   const [live, setLive] = useState(false);
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
@@ -56,10 +73,37 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      setStories((prev) => [
-        { id: Date.now(), createdAt: Date.now(), type: file.type.startsWith('video') ? 'video' : 'image', src: reader.result },
-        ...prev,
-      ]);
+      const baseMeta = {
+        name: file.name,
+        size: file.size,
+        sizeLabel: formatBytes(file.size),
+        type: file.type,
+        lastModified: file.lastModified,
+        lastModifiedISO: new Date(file.lastModified).toISOString(),
+      };
+      const finalize = (extra = {}) => {
+        const meta = { ...baseMeta, ...extra };
+        setStories((prev) => [
+          {
+            id: Date.now(),
+            createdAt: Date.now(),
+            userName,
+            avatar: avatarSrc,
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            src: reader.result,
+            meta,
+          },
+          ...prev,
+        ]);
+      };
+      if (file.type.startsWith('image')) {
+        const img = new Image();
+        img.onload = () => finalize({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => finalize();
+        img.src = reader.result;
+      } else {
+        finalize();
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -107,6 +151,14 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
     if (track) { track.enabled = !track.enabled; setMicOn(track.enabled); }
   };
 
+  const closeViewer = () => { setViewing(null); setShowInfo(false); setReply(''); };
+
+  const sendReply = () => {
+    if (!reply.trim()) return;
+    alert(`Resposta enviada para ${viewing?.userName || 'usuário'}: ${reply}`);
+    setReply('');
+  };
+
   return (
     <div className="relative py-2 overflow-visible">
       <div className="mb-3 flex flex-wrap items-center gap-2 overflow-visible">
@@ -136,11 +188,7 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
       <div className="flex items-center gap-3 overflow-x-auto overflow-y-visible no-scrollbar pb-1">
         {/* Seu story */}
         <div className="relative flex-shrink-0">
-          <button
-            onClick={onAddStory}
-            className="flex flex-col items-center gap-1"
-            title="Publicar story"
-          >
+          <button onClick={onAddStory} className="flex flex-col items-center gap-1" title="Publicar story">
             <div className={`relative w-16 h-16 rounded-full p-[2px] ${live ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600'}`}>
               <div className="w-full h-full rounded-full bg-white p-[2px]">
                 <div className="w-full h-full rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -164,14 +212,9 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
           </button>
         </div>
 
-
-        {/* Existing stories */}
+        {/* Stories do usuário */}
         {stories.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setViewing(s)}
-            className="flex flex-col items-center gap-1 flex-shrink-0"
-          >
+          <button key={s.id} onClick={() => setViewing(s)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
               <div className="w-full h-full rounded-full bg-white p-[2px]">
                 <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
@@ -183,24 +226,92 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-textPrimary">{userName}</span>
+            <span className="text-xs text-textPrimary">{s.userName || userName}</span>
+          </button>
+        ))}
+
+        {/* Stories de amigos conectados */}
+        {FRIEND_STORIES.map((s) => (
+          <button key={s.id} onClick={() => setViewing(s)} className="flex flex-col items-center gap-1 flex-shrink-0">
+            <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
+              <div className="w-full h-full rounded-full bg-white p-[2px]">
+                <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
+                  <img src={s.avatar} alt={s.userName} className="w-full h-full object-cover" />
+                </div>
+              </div>
+            </div>
+            <span className="text-xs text-textPrimary truncate max-w-[64px]">{s.userName}</span>
           </button>
         ))}
       </div>
 
       <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFile} />
 
-      {/* Story viewer */}
+      {/* Story viewer com botões de interação */}
       {viewing && (
-        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={() => setViewing(null)}>
-          <button className="absolute top-4 right-4 text-white" onClick={() => setViewing(null)}>
-            <X size={28} />
-          </button>
-          {viewing.type === 'video' ? (
-            <video src={viewing.src} autoPlay controls className="max-h-full max-w-full" />
-          ) : (
-            <img src={viewing.src} alt="" className="max-h-full max-w-full" />
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 text-white">
+            <div className="flex items-center gap-2">
+              {viewing.avatar && (
+                <img src={viewing.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white/40" />
+              )}
+              <span className="text-sm font-semibold">{viewing.userName || 'Usuário'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {viewing.meta && (
+                <button onClick={() => setShowInfo((v) => !v)} className="p-2 rounded-full bg-white/10" title="Informações da imagem">
+                  <Info size={20} />
+                </button>
+              )}
+              <button onClick={closeViewer} className="p-2 rounded-full bg-white/10">
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mídia */}
+          <div className="flex-1 flex items-center justify-center px-2">
+            {viewing.type === 'video' ? (
+              <video src={viewing.src} autoPlay controls className="max-h-full max-w-full" />
+            ) : (
+              <img src={viewing.src} alt="" className="max-h-full max-w-full" />
+            )}
+          </div>
+
+          {/* Painel de informações da imagem */}
+          {showInfo && viewing.meta && (
+            <div className="mx-4 mb-2 rounded-xl bg-white/10 text-white text-xs p-3 space-y-1 backdrop-blur">
+              <div className="font-semibold text-sm mb-1">Informações da imagem</div>
+              <div><span className="opacity-70">Arquivo:</span> {viewing.meta.name}</div>
+              <div><span className="opacity-70">Tipo:</span> {viewing.meta.type}</div>
+              <div><span className="opacity-70">Tamanho:</span> {viewing.meta.sizeLabel}</div>
+              {viewing.meta.width && (
+                <div><span className="opacity-70">Dimensões:</span> {viewing.meta.width} × {viewing.meta.height}px</div>
+              )}
+              <div><span className="opacity-70">Modificado:</span> {new Date(viewing.meta.lastModified).toLocaleString('pt-BR')}</div>
+            </div>
           )}
+
+          {/* Barra de interação */}
+          <div className="flex items-center gap-2 p-3 border-t border-white/10">
+            <input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendReply()}
+              placeholder={`Responder ${viewing.userName || ''}...`}
+              className="flex-1 bg-white/10 text-white placeholder-white/50 rounded-full px-4 py-2 text-sm outline-none"
+            />
+            <button onClick={() => alert('Curtido!')} className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center" title="Curtir">
+              <Heart size={20} />
+            </button>
+            <button onClick={() => alert('Comentário enviado')} className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center" title="Comentar">
+              <MessageCircle size={20} />
+            </button>
+            <button onClick={sendReply} className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center" title="Enviar">
+              <Send size={18} />
+            </button>
+          </div>
         </div>
       )}
 
