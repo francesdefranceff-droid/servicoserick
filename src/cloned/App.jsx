@@ -101,7 +101,7 @@ function App() {
           <Route path="/ai-chat" element={user ? <AIChat /> : <Navigate to="/" />} />
           <Route path="/services" element={user ? <ServicesPage /> : <Navigate to="/" />} />
           <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/" />} />
-          <Route path="/admin" element={user && user.role === 'admin' ? <AdminDashboard /> : (user ? <Navigate to="/home" /> : <Navigate to="/" />)} />
+          <Route path="/admin" element={user && user.role === 'admin' && user.email === 'admin@pertodemim.app' ? <AdminDashboard /> : (user ? <Navigate to="/home" /> : <Navigate to="/" />)} />
           <Route path="/direct-chat/:userId" element={user ? <DirectChatPage /> : <Navigate to="/" />} />
           <Route path="/volunteers" element={user ? <VolunteersPage /> : <Navigate to="/" />} />
           <Route path="/jobs" element={user ? <JobsPage /> : <Navigate to="/" />} />
