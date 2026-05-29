@@ -172,7 +172,13 @@ export default function AIChat() {
               <div className={`max-w-[80%] px-4 py-3 ${
                 msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
               }`}>
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'ai' ? (
+                  <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                )}
                 {msg.role === 'ai' && (
                   <button
                     type="button"
