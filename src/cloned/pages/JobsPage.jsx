@@ -912,16 +912,9 @@ export default function JobsPage() {
                 {selectedJob.description && (
                   <div>
                     <h4 className="font-bold mb-2">📝 Descrição da Vaga</h4>
-                    {selectedJob.isCommunityPost ? (
-                      <p className="text-sm text-gray-600 whitespace-pre-line">{selectedJob.description}</p>
-                    ) : (
-                      <div 
-                        className="text-sm text-gray-600 prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: selectedJob.description.substring(0, 2000) 
-                        }}
-                      />
-                    )}
+                    <p className="text-sm text-gray-600 whitespace-pre-line">
+                      {String(selectedJob.description).substring(0, 2000)}
+                    </p>
                   </div>
                 )}
 
