@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../ClonedAuthContext';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Film, Wrench, Bell, Menu } from 'lucide-react';
+import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Plus, BarChart3, MessageCircle, Settings, Film, Wrench, Bell, Menu } from 'lucide-react';
 import VideoPlayer from '../components/VideoPlayer';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getStableDefaultAvatarUrl } from '../lib/authProfile';
+import MiniGoogleMap from '../components/MiniGoogleMap';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, prettifyCategoryLabel } from '../lib/serviceCategories';
+import SupportChatWidget from '../components/SupportChatWidget';
 
 // Local fallback store so the feed works even without auth/backend
 const LOCAL_KEY = 'cloned_feed_posts_v1';
@@ -22,26 +26,32 @@ const saveLocalPosts = (posts) => {
   try { localStorage.setItem(LOCAL_KEY, JSON.stringify(posts.slice(0, 50))); } catch {}
 };
 
-const CATEGORY_OPTIONS = [
-  { value: 'food', label: 'Alimentação' },
-  { value: 'legal', label: 'Jurídico' },
-  { value: 'health', label: 'Saúde' },
-  { value: 'housing', label: 'Moradia' },
-  { value: 'work', label: 'Trabalho' },
-  { value: 'education', label: 'Educação' },
-  { value: 'social', label: 'Social' },
-  { value: 'clothes', label: 'Roupas' },
-  { value: 'furniture', label: 'Móveis' },
-  { value: 'transport', label: 'Transporte' },
-  { value: 'repairs', label: 'Reparos' },
-];
+let svcPostsVideosSupport;
+
+const isMissingVideosColumnError = (error) => {
+  const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+  return error?.code === '42703' || error?.code === 'PGRST204' || (message.includes('videos') && message.includes('column'));
+};
+
+const supportsSvcPostVideos = async () => {
+  if (typeof svcPostsVideosSupport === 'boolean') return svcPostsVideosSupport;
+  const { error } = await supabase.from('svc_posts').select('id,videos').limit(1);
+  svcPostsVideosSupport = !isMissingVideosColumnError(error);
+  return svcPostsVideosSupport;
+};
+
+const CATEGORY_OPTIONS = WORK_SERVICE_CATEGORIES
+  .filter((category) => category.value !== 'outros')
+  .map(({ value, label }) => ({ value, label }));
+
+const getCategoryLabel = (value) => CATEGORY_OPTIONS.find((c) => c.value === value)?.label || prettifyCategoryLabel(value);
 
 const PREVIEW_POSTS = [
   {
     id: 'preview-need-1',
     user_id: 'preview-migrant-1',
     type: 'need',
-    category: 'housing',
+    category: 'reformas',
     title: 'Procuro hospedagem temporária em Paris',
     description: 'Cheguei recentemente com minha família e precisamos de uma indicação segura de quarto ou acolhimento por alguns dias.',
     images: ['https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=900&q=85'],
@@ -57,7 +67,7 @@ const PREVIEW_POSTS = [
     id: 'preview-offer-1',
     user_id: 'preview-helper-1',
     type: 'offer',
-    category: 'legal',
+    category: 'eletrica',
     title: 'Orientação gratuita para documentação',
     description: 'Sou voluntário e posso ajudar com leitura de cartas administrativas, agendamento e dúvidas sobre regularização.',
     images: ['https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=900&q=85'],
@@ -71,11 +81,71 @@ const PREVIEW_POSTS = [
   },
 ];
 
+const EMOJIS = ['❤️','😂','😍','👍','🙏','🔥','🎉','😢','😮','👏','💯','🤝'];
+const storageKey = (id) => `feed_post_${id}`;
+const loadState = (id) => {
+  try { return JSON.parse(localStorage.getItem(storageKey(id))) || {}; } catch { return {}; }
+};
+const saveState = (id, data) => {
+  try { localStorage.setItem(storageKey(id), JSON.stringify(data)); } catch {}
+};
+
+const getActivePublishUser = async (contextUser) => {
+  if (contextUser?.id) return contextUser;
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) return session.user;
+  } catch (_) {}
+
+  try {
+    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+    if (refreshedSession?.user) return refreshedSession.user;
+  } catch (_) {}
+
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    return authUser || null;
+  } catch (_) {
+    return null;
+  }
+};
+
+const getPublishSessionUser = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) return session.user;
+  } catch (_) {}
+
+  try {
+    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+    if (refreshedSession?.user) return refreshedSession.user;
+  } catch (_) {}
+
+  return null;
+};
+
 // Jataí-style PostCard rendering PertoDeMimServicos posts
 const PostCard = ({ post, onChat }) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes_count || 0);
+  const initial = loadState(post.id);
+  const [liked, setLiked] = useState(!!initial.liked);
+  const [likeCount, setLikeCount] = useState(initial.likeCount ?? (post.likes_count || 0));
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState(initial.comments || []);
+  const [commentText, setCommentText] = useState('');
+  const [showEmoji, setShowEmoji] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    saveState(post.id, { liked, likeCount, comments });
+  }, [liked, likeCount, comments, post.id]);
+
+  const toggleLike = () => {
+    setLiked((prev) => {
+      setLikeCount((c) => prev ? c - 1 : c + 1);
+      return !prev;
+    });
+  };
 
   const handleRespond = () => {
     if (onChat && post.user_id) {
@@ -84,6 +154,20 @@ const PostCard = ({ post, onChat }) => {
       toast.info('Abrindo conversa...');
     }
   };
+
+  const handleAddComment = (e) => {
+    e?.preventDefault?.();
+    const text = commentText.trim();
+    if (!text) return;
+    setComments((prev) => [
+      ...prev,
+      { id: Date.now(), author: 'Você', text, created_at: new Date().toISOString() },
+    ]);
+    setCommentText('');
+    setShowEmoji(false);
+  };
+
+  const addEmoji = (emoji) => setCommentText((t) => t + emoji);
 
   const displayName = post.user?.name || 'Usuário';
   const avatarFallback = displayName.charAt(0).toUpperCase();
@@ -107,12 +191,26 @@ const PostCard = ({ post, onChat }) => {
 
       <div className="px-3 pb-3">
         <div className="flex items-start space-x-2.5 mb-2">
-          <Avatar className="w-9 h-9">
-            <AvatarImage src={avatarUrl} />
-            <AvatarFallback>{avatarFallback}</AvatarFallback>
-          </Avatar>
+          <button
+            type="button"
+            onClick={() => post.user_id && navigate(`/u/${post.user_id}`)}
+            className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+            aria-label={`Ver perfil de ${displayName}`}
+          >
+            <Avatar className="w-14 h-14 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-white shadow-sm">
+              <AvatarImage src={avatarUrl} className="object-cover" />
+              <AvatarFallback className="text-base font-semibold">{avatarFallback}</AvatarFallback>
+            </Avatar>
+          </button>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm mb-1.5">{displayName}</h3>
+            <button
+              type="button"
+              onClick={() => post.user_id && navigate(`/u/${post.user_id}`)}
+              className="font-bold text-sm mb-1.5 hover:underline text-left inline-flex items-center gap-1"
+            >
+              {displayName}
+              <VerifiedBadge size={14} />
+            </button>
             {post.title && <p className="text-xs font-medium text-gray-900 mb-1">{post.title}</p>}
             <p className="text-xs text-gray-800 leading-relaxed">{description}</p>
 
@@ -122,12 +220,15 @@ const PostCard = ({ post, onChat }) => {
                   <div
                     key={idx}
                     data-testid={`post-card-img-${idx}`}
-                    className={`relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 ${images.length === 1 ? 'max-h-[500px]' : 'aspect-square'}`}
+                    className="relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 aspect-square"
                   >
                     <img
                       src={img}
                       alt={`Mídia ${idx + 1}`}
-                      className={`w-full h-full ${images.length === 1 ? 'object-contain' : 'object-cover'}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                      style={{ imageRendering: 'auto' }}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   </div>
@@ -151,23 +252,32 @@ const PostCard = ({ post, onChat }) => {
               <MapPin className="w-3 h-3" />
               <span>{location}</span>
             </div>
+
+            {(post.location?.lat && post.location?.lng) && (
+              <div className="mt-2 mb-1">
+                <p className="text-xs font-semibold text-gray-800 mb-1">Où se situe votre demande</p>
+                <div className="rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm">
+                  <MiniGoogleMap lat={post.location.lat} lng={post.location.lng} height={220} zoom={15} />
+                </div>
+              </div>
+            )}
             {budget && (
               <p className="text-[10px] text-gray-700 mt-0.5">
                 Orçamento: <span className="font-semibold">{budget}</span>
               </p>
             )}
             <p className="text-[10px] text-gray-600 mt-0.5">
-              Categoria: <span className="font-medium capitalize">{post.category || 'geral'}</span>
+              Categoria: <span className="font-medium">{getCategoryLabel(post.category)}</span>
             </p>
           </div>
         </div>
 
         <div className="text-right text-[10px] text-gray-500 mb-1.5">{likeCount} curtidas</div>
-        <div className="text-right text-[10px] text-gray-500 mb-2">{post.comments_count || 0} respostas</div>
+        <div className="text-right text-[10px] text-gray-500 mb-2">{(post.comments_count || 0) + comments.length} respostas</div>
 
         <div className="flex items-center justify-start gap-3 pt-2 border-t border-gray-100">
           <button
-            onClick={() => { setLiked(!liked); setLikeCount(p => liked ? p - 1 : p + 1); }}
+            onClick={toggleLike}
             className={`flex items-center gap-1.5 text-xs transition-colors ${liked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
             data-testid="post-like-btn"
           >
@@ -182,6 +292,14 @@ const PostCard = ({ post, onChat }) => {
             <span>Recomendar</span>
           </button>
           <button
+            onClick={() => setShowComments((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-purple-600 transition-colors"
+            data-testid="post-comment-btn"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Comentar</span>
+          </button>
+          <button
             onClick={handleRespond}
             className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-green-600 transition-colors"
             data-testid="post-respond-btn"
@@ -190,6 +308,56 @@ const PostCard = ({ post, onChat }) => {
             <span>Responder</span>
           </button>
         </div>
+
+        {showComments && (
+          <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+            {comments.length === 0 && (
+              <p className="text-[11px] text-gray-500 italic">Seja o primeiro a comentar.</p>
+            )}
+            {comments.map((c) => (
+              <div key={c.id} className="flex items-start gap-2 text-xs">
+                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-600 shrink-0">
+                  {c.author.charAt(0)}
+                </div>
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-1.5">
+                  <p className="font-semibold text-[11px] text-gray-800">{c.author}</p>
+                  <p className="text-[12px] text-gray-700">{c.text}</p>
+                </div>
+              </div>
+            ))}
+            <form onSubmit={handleAddComment} className="flex items-center gap-2 pt-1 relative">
+              <button
+                type="button"
+                onClick={() => setShowEmoji((v) => !v)}
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-base"
+                aria-label="Adicionar emoji"
+              >
+                😊
+              </button>
+              {showEmoji && (
+                <div className="absolute bottom-10 left-0 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-2 grid grid-cols-6 gap-1">
+                  {EMOJIS.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => addEmoji(e)}
+                      className="w-8 h-8 text-lg hover:bg-gray-100 rounded"
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <Input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Escreva um comentário..."
+                className="h-8 text-xs"
+              />
+              <Button type="submit" size="sm" className="h-8 px-3 text-xs">Enviar</Button>
+            </form>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -198,7 +366,8 @@ const PostCard = ({ post, onChat }) => {
 export default function FeedPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, token } = useContext(AuthContext);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useContext(AuthContext);
 
   const [posts, setPosts] = useState([]);
   const [showBanner, setShowBanner] = useState(true);
@@ -211,6 +380,7 @@ export default function FeedPage() {
   // Form fields
   const [postDescription, setPostDescription] = useState('');
   const [postAddress, setPostAddress] = useState('');
+  const [postCoords, setPostCoords] = useState(null); // {lat, lng}
   const [detectingAddress, setDetectingAddress] = useState(false);
 
   const detectAddress = React.useCallback(() => {
@@ -219,6 +389,7 @@ export default function FeedPage() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
+        setPostCoords({ lat: latitude, lng: longitude });
         try {
           const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const d = await r.json();
@@ -235,63 +406,88 @@ export default function FeedPage() {
 
   useEffect(() => { detectAddress(); }, [detectAddress]);
   const [postBudget, setPostBudget] = useState('Sob orçamento');
-  const [postCategory, setPostCategory] = useState('social');
-  const [selectedPhotos, setSelectedPhotos] = useState([]); // [{id, dataUrl}]
-  const [selectedVideos, setSelectedVideos] = useState([]); // [{id, dataUrl}]
+  const [postCategory, setPostCategory] = useState('reformas');
+  const [customPostCategory, setCustomPostCategory] = useState('');
+  const [selectedPhotos, setSelectedPhotos] = useState([]); // [{id, file, dataUrl, previewUrl}]
+  const [selectedVideos, setSelectedVideos] = useState([]); // [{id, file, dataUrl, previewUrl}]
+  const selectedPhotosRef = React.useRef([]);
+  const selectedVideosRef = React.useRef([]);
+
+  useEffect(() => { selectedPhotosRef.current = selectedPhotos; }, [selectedPhotos]);
+  useEffect(() => { selectedVideosRef.current = selectedVideos; }, [selectedVideos]);
+  useEffect(() => () => {
+    selectedPhotosRef.current.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+    selectedVideosRef.current.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+  }, []);
 
   useEffect(() => {
     fetchPosts();
+
+    // Realtime: refetch when any svc_posts row changes
+    const channel = supabase
+      .channel('svc_posts_feed')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'svc_posts' }, () => {
+        fetchPosts();
+      })
+      .subscribe();
+
+    // Mobile: refetch when app returns to foreground or window regains focus
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchPosts(); };
+    const onFocus = () => fetchPosts();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+
+    // Safety net: poll every 30s in case realtime/websocket is blocked on mobile networks
+    const interval = setInterval(fetchPosts, 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchPosts = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const authed = !!session?.session;
+      const { data: svc, error } = await supabase
+        .from('svc_posts')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) console.warn('svc_posts fetch error', error);
 
-      // 1) local posts always shown
-      const local = loadLocalPosts();
-
-      // 2) supabase posts when authenticated
-      let remote = [];
-      if (authed) {
-        const { data: svc } = await supabase
-          .from('svc_posts')
-          .select('*')
-          .eq('status', 'open')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        const ids = Array.from(new Set((svc ?? []).map(p => p.user_id)));
-        let profMap = {};
-        if (ids.length) {
-          const { data: profs } = await supabase
-            .from('svc_profiles')
-            .select('user_id, display_name, avatar_url')
-            .in('user_id', ids);
-          (profs ?? []).forEach(p => { profMap[p.user_id] = p; });
-        }
-        remote = (svc ?? []).map(p => ({
-          id: p.id,
-          user_id: p.user_id,
-          type: p.post_type === 'volunteer' ? 'offer' : 'need',
-          category: p.category_slug || 'social',
-          title: p.title,
-          description: p.description,
-          images: p.photos || [],
-          videos: [],
-          budget: p.budget_range,
-          likes_count: 0,
-          comments_count: 0,
-          created_at: p.created_at,
-          location: { address: p.address || 'Paris', city: 'Paris' },
-          user: {
-            name: profMap[p.user_id]?.display_name || 'Usuário',
-            avatar: profMap[p.user_id]?.avatar_url,
-          },
-        }));
+      const ids = Array.from(new Set((svc ?? []).map(p => p.user_id)));
+      let profMap = {};
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from('svc_profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', ids);
+        (profs ?? []).forEach(p => { profMap[p.user_id] = p; });
       }
-
-      const combined = [...local, ...remote];
-      setPosts(combined.length ? combined : PREVIEW_POSTS);
+      const remote = (svc ?? []).map(p => ({
+        id: p.id,
+        user_id: p.user_id,
+        type: p.post_type === 'volunteer' ? 'offer' : 'need',
+        category: p.category_slug || 'reformas',
+        title: p.title,
+        description: p.description,
+        images: p.photos || [],
+        videos: p.videos || [],
+        budget: p.budget_range,
+        likes_count: 0,
+        comments_count: 0,
+        created_at: p.created_at,
+        location: { address: p.address || 'Paris', city: 'Paris', lat: p.lat, lng: p.lng },
+        user: {
+          name: profMap[p.user_id]?.display_name || 'Usuário',
+          avatar: profMap[p.user_id]?.avatar_url,
+        },
+      }));
+      const local = loadLocalPosts();
+      setPosts(local.length ? [...local, ...(remote.length ? remote : PREVIEW_POSTS)] : (remote.length ? remote : PREVIEW_POSTS));
     } catch (e) {
       console.error('Failed to fetch posts', e);
       const local = loadLocalPosts();
@@ -299,15 +495,95 @@ export default function FeedPage() {
     }
   };
 
-  const openModal = (mode) => {
+  const resetCreateModal = (mode) => {
     setModalMode(mode);
     setPostDescription('');
     setPostBudget(mode === 'need' ? 'Sob orçamento' : 'A combinar');
-    setPostCategory('social');
-    setSelectedPhotos([]);
-    setSelectedVideos([]);
+    setPostCategory('reformas');
+    setCustomPostCategory('');
+    setSelectedPhotos((prev) => {
+      prev.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
+    setSelectedVideos((prev) => {
+      prev.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
     setShowCreateModal(true);
   };
+
+  const publishLocalPost = (uid, publishMode = modalMode, uploadedUrls = [], uploadedVideos = []) => {
+    const localPost = {
+      id: `local-${Date.now()}`,
+      user_id: uid,
+      type: publishMode === 'offer' ? 'offer' : 'need',
+      category: postCategory === CUSTOM_CATEGORY_VALUE ? (customPostCategory.trim() || 'outros') : postCategory,
+      title: postDescription.slice(0, 60),
+      description: postDescription,
+      images: uploadedUrls.length ? uploadedUrls : selectedPhotos.map((photo) => photo.dataUrl || photo.previewUrl).filter(Boolean),
+      videos: uploadedVideos.length ? uploadedVideos : selectedVideos.map((video) => video.dataUrl || video.previewUrl).filter(Boolean),
+      budget: postBudget || null,
+      likes_count: 0,
+      comments_count: 0,
+      created_at: new Date().toISOString(),
+      location: { address: postAddress || 'Jataí, Goiás', city: 'Jataí', lat: postCoords?.lat, lng: postCoords?.lng },
+      user: { name: user?.name || user?.display_name || 'Você', avatar: userAvatar },
+    };
+    const nextLocalPosts = [localPost, ...loadLocalPosts()];
+    saveLocalPosts(nextLocalPosts);
+    setPosts((prev) => [localPost, ...prev]);
+    return localPost;
+  };
+
+  const clearPublishForm = () => {
+    setShowCreateModal(false);
+    setPostDescription('');
+    setCustomPostCategory('');
+    setSelectedPhotos((prev) => {
+      prev.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
+    setSelectedVideos((prev) => {
+      prev.forEach((item) => item?.previewUrl && URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
+  };
+
+  const requireLoginForPublish = (mode = 'need') => {
+    toast.info('Você pode publicar agora. Para salvar na conta, faça login depois.');
+    resetCreateModal(mode);
+  };
+
+  const openModal = async (mode) => {
+    try {
+      const activeUser = await getActivePublishUser(user);
+      if (activeUser) {
+        resetCreateModal(mode);
+        return;
+      }
+    } catch (error) {
+      console.warn('publish auth check failed', error);
+    }
+    requireLoginForPublish(mode);
+  };
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'publish') return;
+    let cancelled = false;
+    (async () => {
+      let isAuthed = false;
+      try {
+        isAuthed = Boolean(await getActivePublishUser(user));
+      } catch (error) {
+        console.warn('publish auto-open auth check failed', error);
+      }
+      if (cancelled || !isAuthed) return;
+      const mode = searchParams.get('mode') === 'offer' ? 'offer' : 'need';
+      resetCreateModal(mode);
+      setSearchParams({}, { replace: true });
+    })();
+    return () => { cancelled = true; };
+  }, [user, searchParams, setSearchParams]);
 
   const handlePhotoSelect = (e) => {
     const files = Array.from(e.target.files || []);
@@ -318,15 +594,20 @@ export default function FeedPage() {
       return;
     }
     files.forEach((file) => {
-      if (file.size > 5_000_000) {
-        toast.error(`${file.name}: máx. 5MB`);
+      if (file.size > 15_000_000) {
+        toast.error(`${file.name}: máx. 15MB`);
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedPhotos((prev) => [
           ...prev,
-          { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: reader.result },
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            file,
+            dataUrl: reader.result,
+            previewUrl: URL.createObjectURL(file),
+          },
         ]);
       };
       reader.readAsDataURL(file);
@@ -343,83 +624,187 @@ export default function FeedPage() {
       return;
     }
     files.forEach((file) => {
-      if (file.size > 4_000_000) {
-        toast.error(`Vídeo muito grande (${(file.size / 1_000_000).toFixed(1)}MB). Máximo 4MB.`);
+      if (file.size > 150_000_000) {
+        toast.error(`Vídeo muito grande (${(file.size / 1_000_000).toFixed(1)}MB). Máximo 150MB.`);
         e.target.value = '';
         return;
       }
-      const mime = (file.type || '').toLowerCase();
-      if (mime.includes('quicktime') || file.name.toLowerCase().endsWith('.mov')) {
-        toast.error('Formato MOV não roda em todos os navegadores. Use MP4.');
-        e.target.value = '';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedVideos((prev) => [
-          ...prev,
-          { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: reader.result },
-        ]);
-        toast.success('Vídeo adicionado!');
-      };
-      reader.readAsDataURL(file);
+      const previewUrl = URL.createObjectURL(file);
+      setSelectedVideos((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          file,
+          dataUrl: previewUrl,
+          previewUrl,
+        },
+      ]);
+      toast.success('Vídeo adicionado!');
     });
     e.target.value = '';
   };
 
-  const removePhoto = (id) => setSelectedPhotos((prev) => prev.filter((p) => p.id !== id));
-  const removeVideo = (id) => setSelectedVideos((prev) => prev.filter((v) => v.id !== id));
+  const removePhoto = (id) => setSelectedPhotos((prev) => {
+    const target = prev.find((p) => p.id === id);
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+    return prev.filter((p) => p.id !== id);
+  });
+  const removeVideo = (id) => setSelectedVideos((prev) => {
+    const target = prev.find((v) => v.id === id);
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+    if (target?.dataUrl && target.dataUrl !== target.previewUrl) URL.revokeObjectURL(target.dataUrl);
+    return prev.filter((v) => v.id !== id);
+  });
 
-  const handlePostSubmit = async () => {
+  const dataUrlToBlob = (dataUrl) => {
+    const [meta, b64] = dataUrl.split(',');
+    const mime = /data:([^;]+);/.exec(meta)?.[1] || 'image/jpeg';
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  };
+
+  const uploadPhotosToStorage = async (uid, photos) => {
+    const urls = [];
+    for (const p of photos) {
+      if (!p?.file && !p?.dataUrl) continue;
+      try {
+        const blob = p.file || dataUrlToBlob(p.dataUrl);
+        const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+        const path = `${uid}/posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('svc-photos').upload(path, blob, {
+          contentType: blob.type, upsert: false,
+        });
+        if (upErr) { console.warn('photo upload failed', upErr); continue; }
+        const { data } = supabase.storage.from('svc-photos').getPublicUrl(path);
+        if (data?.publicUrl) urls.push(data.publicUrl);
+      } catch (e) { console.warn('photo upload error', e); }
+    }
+    return urls;
+  };
+
+  const uploadVideosToStorage = async (uid, videos) => {
+    const urls = [];
+    for (const v of videos) {
+      if (!v?.file) { console.warn('[video] item sem file', v); continue; }
+      try {
+        const file = v.file;
+        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+        const path = `${uid}/posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        console.log('[video] enviando', { path, type: file.type, size: file.size });
+        const { error: upErr } = await supabase.storage.from('svc-photos').upload(path, file, {
+          contentType: file.type || 'video/mp4', upsert: false,
+        });
+        if (upErr) {
+          console.error('[video] upload falhou', upErr);
+          toast.error('Falha ao enviar vídeo: ' + upErr.message);
+          continue;
+        }
+        const { data } = supabase.storage.from('svc-photos').getPublicUrl(path);
+        console.log('[video] OK', data?.publicUrl);
+        if (data?.publicUrl) urls.push(data.publicUrl);
+      } catch (e) {
+        console.error('[video] erro', e);
+        toast.error('Erro no vídeo: ' + (e?.message || e));
+      }
+    }
+    return urls;
+  };
+
+
+  const handlePostSubmit = async (modeOverride) => {
+    const publishMode = modeOverride || modalMode;
     if (!postDescription.trim()) {
       toast.error('Adicione uma descrição');
       return;
     }
+    const customCategoryName = customPostCategory.trim();
+    if (postCategory === CUSTOM_CATEGORY_VALUE && !customCategoryName) {
+      toast.error('Escreva sua categoria');
+      return;
+    }
     setLoadingPost(true);
     try {
-      const newPost = {
-        id: `local-${Date.now()}`,
-        user_id: user?.id || 'local-user',
-        type: modalMode,
-        category: postCategory,
-        title: postDescription.slice(0, 60),
-        description: postDescription,
-        images: selectedPhotos.map((p) => p.dataUrl),
-        videos: selectedVideos.map((v) => v.dataUrl),
-        budget: postBudget,
-        likes_count: 0,
-        comments_count: 0,
-        created_at: new Date().toISOString(),
-        location: { address: postAddress, city: 'Paris' },
-        user: { name: user?.name || 'Você', avatar: user?.avatar },
-      };
+      const authUser = await getPublishSessionUser();
+      const activeUser = authUser || await getActivePublishUser(user);
+      if (!activeUser) {
+        const guestId = `guest-${Date.now()}`;
+        publishLocalPost(guestId, publishMode);
+        toast.success(publishMode === 'need' ? 'Sua demanda foi publicada neste aparelho!' : 'Seu serviço foi publicado neste aparelho!');
+        clearPublishForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const uid = activeUser.id || `local-user-${Date.now()}`;
 
-      // Try to persist to Supabase if logged in
-      const { data: session } = await supabase.auth.getSession();
-      if (session?.session) {
-        const uid = session.session.user.id;
-        const { error } = await supabase.from('svc_posts').insert({
-          user_id: uid,
-          title: newPost.title,
-          description: newPost.description,
-          photos: newPost.images.filter(u => u && !u.startsWith('data:')),
-          budget_range: postBudget || null,
-          category_slug: postCategory || null,
-          address: postAddress || null,
-          post_type: modalMode === 'offer' ? 'volunteer' : 'paid',
-          status: 'open',
+      // Upload photos and videos to public storage so other users can see them
+      const uploadedUrls = await uploadPhotosToStorage(uid, selectedPhotos);
+      const uploadedVideos = await uploadVideosToStorage(uid, selectedVideos);
+      let categorySlug = CATEGORY_OPTIONS.some((category) => category.value === postCategory) ? postCategory : 'reformas';
+      if (postCategory === CUSTOM_CATEGORY_VALUE) {
+        const { data: createdSlug, error: categoryError } = await supabase.rpc('ensure_svc_category', {
+          _name: customCategoryName,
         });
-        if (error) console.warn('svc_posts insert failed, keeping local only:', error.message);
+        if (categoryError) throw categoryError;
+        categorySlug = createdSlug || 'outros';
       }
 
-      // Optimistic local persistence so the post always appears
-      const local = loadLocalPosts();
-      const updated = [newPost, ...local];
-      saveLocalPosts(updated);
-      setPosts((prev) => [newPost, ...prev]);
+      const insertPayload = {
+        user_id: uid,
+        title: postDescription.slice(0, 60),
+        description: postDescription,
+        photos: uploadedUrls,
+        budget_range: postBudget || null,
+        category_slug: categorySlug,
+        address: postAddress || null,
+        lat: postCoords?.lat ?? null,
+        lng: postCoords?.lng ?? null,
+        post_type: publishMode === 'offer' ? 'volunteer' : 'paid',
+        status: 'open',
+      };
 
-      toast.success(modalMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
-      setShowCreateModal(false);
+      const canSaveVideos = uploadedVideos.length > 0 ? await supportsSvcPostVideos() : false;
+      if (canSaveVideos) insertPayload.videos = uploadedVideos;
+
+      if (!authUser) {
+        publishLocalPost(uid, publishMode, uploadedUrls, uploadedVideos);
+        toast.success(publishMode === 'need' ? 'Sua demanda foi publicada neste aparelho!' : 'Seu serviço foi publicado neste aparelho!');
+        clearPublishForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      let { data: inserted, error } = await supabase
+        .from('svc_posts')
+        .insert(insertPayload)
+        .select('id')
+        .single();
+
+      if (isMissingVideosColumnError(error) && insertPayload.videos) {
+        svcPostsVideosSupport = false;
+        const { videos, ...payloadWithoutVideos } = insertPayload;
+        ({ data: inserted, error } = await supabase
+          .from('svc_posts')
+          .insert(payloadWithoutVideos)
+          .select('id')
+          .single());
+      }
+
+      if (error || !inserted?.id) {
+        console.error('svc_posts insert failed', error);
+        toast.error(`Erro ao publicar: ${error?.message || 'tente novamente'}`);
+        return;
+      }
+
+      if (uploadedVideos.length > 0 && !insertPayload.videos) {
+        publishLocalPost(uid, publishMode, uploadedUrls, uploadedVideos);
+        toast.info('Publicado no banco. O vídeo ficará visível neste aparelho até a coluna videos ser ativada no backend.');
+      }
+
+      toast.success(publishMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
+      clearPublishForm();
+      await fetchPosts();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
       console.error(e);
@@ -486,9 +871,9 @@ export default function FeedPage() {
                 <HomeIcon className="w-5 h-5 mb-0.5" />
                 <span className="text-[10px]">Início</span>
               </button>
-              <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
-                <Users className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px]">Voluntários</span>
+              <button onClick={() => navigate('/jobs')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                <Wrench className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Trabalho</span>
               </button>
               <button
                 onClick={() => openModal('need')}
@@ -620,7 +1005,7 @@ export default function FeedPage() {
           </div>
 
           {/* Right Sidebar - Post Creation + Monetization */}
-          <div className="lg:col-span-5 space-y-3">
+          <div className="hidden lg:block lg:col-span-5 space-y-3">
             <Card id="post-create-card" className="p-4 bg-gray-50 border border-gray-200">
               <h3 className="font-medium text-sm mb-3">Olá, {user?.name?.split(' ')[0] || ''}</h3>
 
@@ -640,32 +1025,32 @@ export default function FeedPage() {
                 <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
                   Aumente suas chances em 25% ilustrando sua necessidade.
                 </p>
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="flex gap-1.5 mb-3">
                   {[0, 1, 2].map((index) => {
                     const photo = selectedPhotos[index];
                     return (
-                      <div key={index} className="relative aspect-square">
+                      <div key={index} className="relative w-14 h-14">
                         {photo ? (
                           <>
                             <img
                               src={photo.dataUrl}
                               alt="Preview"
-                              className="w-full h-full object-cover rounded-lg border-2 border-gray-300"
+                              className="w-full h-full object-cover rounded-md border border-gray-300"
                             />
                             <button
                               onClick={() => removePhoto(photo.id)}
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow"
                               data-testid={`remove-feed-photo-${index}`}
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-2.5 h-2.5" />
                             </button>
                           </>
                         ) : (
                           <label
-                            className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-400 hover:bg-white transition-all bg-white"
+                            className="w-full h-full border border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:border-green-400 hover:bg-white transition-all bg-white"
                             data-testid={`feed-photo-slot-${index}`}
                           >
-                            <Camera className="w-5 h-5 text-gray-400" />
+                            <Camera className="w-4 h-4 text-gray-400" />
                             <input
                               type="file"
                               accept="image/*"
@@ -681,6 +1066,7 @@ export default function FeedPage() {
                 </div>
               </div>
 
+
               <div className="mb-3">
                 <label className="text-xs font-semibold mb-1 block">Endereço</label>
                 <div className="flex gap-2">
@@ -695,10 +1081,15 @@ export default function FeedPage() {
                     {detectingAddress ? '...' : '📍 Detectar'}
                   </button>
                 </div>
+                {postCoords?.lat && postCoords?.lng && (
+                  <div className="mt-2 rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm">
+                    <MiniGoogleMap lat={postCoords.lat} lng={postCoords.lng} height={160} zoom={15} />
+                  </div>
+                )}
               </div>
 
               <Button
-                onClick={handlePostSubmit}
+                onClick={() => handlePostSubmit('need')}
                 disabled={loadingPost}
                 className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-9 font-semibold shadow-sm text-sm"
                 data-testid="feed-publish-button"
@@ -713,7 +1104,7 @@ export default function FeedPage() {
                 Responda às solicitações publicadas perto de você e ajude pessoas que precisam.
               </p>
               <Button
-                onClick={() => navigate('/volunteers')}
+                onClick={() => navigate('/oferecer-servicos')}
                 className="w-full bg-[#FF9B8A] hover:bg-[#FF8A79] text-white rounded-full h-9 font-semibold shadow-sm text-sm"
                 data-testid="monetize-cta"
               >
@@ -749,12 +1140,11 @@ export default function FeedPage() {
           <span className="text-[11px] text-[#8b5cf6] font-semibold">Accueil</span>
         </button>
 
-        <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative" data-testid="nav-volunteers">
+        <button onClick={() => navigate('/jobs')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative" data-testid="nav-jobs">
           <div className="relative">
-            <Users className="w-6 h-6 text-gray-500" />
-            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">999+</span>
+            <Wrench className="w-6 h-6 text-gray-500" />
           </div>
-          <span className="text-[11px] text-gray-600">Ofertantes</span>
+          <span className="text-[11px] text-gray-600">Trabalho</span>
         </button>
 
         <button
@@ -873,7 +1263,7 @@ export default function FeedPage() {
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-900 mb-1">Adicione um vídeo</h4>
               <p className="text-[11px] text-gray-500 mb-3">
-                Opcional · MP4/WebM até 4MB · Não suporta MOV do iPhone.
+                Opcional · MP4/WebM/MOV até 50MB.
               </p>
               {selectedVideos.length > 0 ? (
                 <div className="relative">
@@ -897,7 +1287,7 @@ export default function FeedPage() {
                 >
                   <Film className="w-6 h-6 text-gray-400" />
                   <span className="text-[11px] text-gray-500 mt-1">Adicionar vídeo (MP4)</span>
-                  <input type="file" accept="video/mp4,video/webm" onChange={handleVideoSelect} className="hidden" />
+                  <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
                 </label>
               )}
             </div>
@@ -949,7 +1339,18 @@ export default function FeedPage() {
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
+                <option value={CUSTOM_CATEGORY_VALUE}>Outra categoria</option>
               </select>
+              {postCategory === CUSTOM_CATEGORY_VALUE && (
+                <Input
+                  value={customPostCategory}
+                  onChange={(e) => setCustomPostCategory(e.target.value)}
+                  placeholder="Escreva sua categoria. Ex: soldador, confeiteiro"
+                  maxLength={40}
+                  data-testid="modal-custom-category"
+                  className="mt-3 h-10 text-sm rounded-xl border-gray-300"
+                />
+              )}
             </div>
 
             <Button
@@ -963,6 +1364,7 @@ export default function FeedPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <SupportChatWidget />
     </div>
   );
 }

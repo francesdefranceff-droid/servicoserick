@@ -16,11 +16,16 @@ import AdminDashboard from './pages/AdminDashboard';
 import DirectChatPage from './pages/DirectChatPage';
 import VolunteersPage from './pages/VolunteersPage';
 import VolunteerRegisterPage from './pages/VolunteerRegisterPage';
+import OfferServicesPage from './pages/OfferServicesPage';
 import NearbyHelpersPage from './pages/NearbyHelpersPage';
 import MapPage from './pages/MapPage';
 import JobsPage from './pages/JobsPage';
 import HousingPage from './pages/HousingPage';
 import SubscriptionPage from './pages/SubscriptionPage';
+import PublicProfilePage from './pages/PublicProfilePage';
+import CallPage from './pages/CallPage';
+import OferecoAjudaPage from './pages/OferecoAjudaPage';
+import SouVoluntarioPage from './pages/SouVoluntarioPage';
 import { AuthContext } from './ClonedAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getOrCreateSvcProfile, normalizeAuthUser } from './lib/authProfile';
@@ -40,11 +45,22 @@ export function ClonedAuthProvider({ children }) {
     }
 
     const profile = await getOrCreateSvcProfile(session.user);
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id);
+
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+    }
+
+    const isAdmin = (roles ?? []).some((item) => item.role === 'admin');
     const normalized = normalizeAuthUser(session.user, profile);
-    setUser(normalized);
+    const hydratedUser = { ...normalized, role: isAdmin ? 'admin' : normalized.role };
+    setUser(hydratedUser);
     setToken(session.access_token || null);
     if (session.access_token) localStorage.setItem('token', session.access_token);
-    return normalized;
+    return hydratedUser;
   };
 
   useEffect(() => {
@@ -87,6 +103,11 @@ export function ClonedAuthProvider({ children }) {
   const login = async (newToken, userData) => {
     if (newToken) localStorage.setItem('token', newToken);
     setToken(newToken || null);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await loadUser(session);
+      return;
+    }
     setUser(userData || null);
   };
 
@@ -132,6 +153,8 @@ export function clonedRoutes(user) {
     <Route key="cloned-ofertantes" path="/servicos/ofertantes" element={<VolunteersPage />} />,
     <Route key="cloned-profile" path="/profile" element={<ProfilePage />} />,
     <Route key="cloned-servicos-profile" path="/servicos/perfil" element={<ProfilePage />} />,
+    <Route key="cloned-public-profile" path="/u/:userId" element={<PublicProfilePage />} />,
+    <Route key="cloned-call" path="/call/:room" element={<CallPage />} />,
     <Route key="cloned-admin" path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/home" />} />,
     <Route key="cloned-servicos-admin" path="/servicos/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/home" />} />,
     <Route key="cloned-direct-chat" path="/direct-chat/:userId" element={<DirectChatPage />} />,
@@ -141,7 +164,10 @@ export function clonedRoutes(user) {
     <Route key="cloned-nearby" path="/nearby" element={<NearbyHelpersPage />} />,
     <Route key="cloned-map" path="/map" element={<MapPage />} />,
     <Route key="cloned-volunteer-register" path="/volunteer-register" element={<VolunteerRegisterPage />} />,
+    <Route key="cloned-oferecer" path="/oferecer-servicos" element={<OfferServicesPage />} />,
     <Route key="cloned-assinatura" path="/assinatura" element={<SubscriptionPage />} />,
     <Route key="cloned-servicos-assinatura" path="/servicos/assinatura" element={<SubscriptionPage />} />,
+    <Route key="cloned-ofereco-ajuda" path="/ofereco-ajuda" element={<OferecoAjudaPage />} />,
+    <Route key="cloned-sou-voluntario" path="/sou-voluntario" element={<SouVoluntarioPage />} />,
   ];
 }

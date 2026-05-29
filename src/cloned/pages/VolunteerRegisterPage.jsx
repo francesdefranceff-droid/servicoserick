@@ -138,19 +138,22 @@ export default function VolunteerRegisterPage() {
       });
       if (error) throw error;
 
-      if (data.session) {
-        const profile = await getOrCreateSvcProfile(data.user, {
-          display_name: name,
-          role: 'helper',
-          categories: helpCategories,
-        });
-        await login(data.session.access_token, normalizeAuthUser(data.user, profile));
-        toast.success(t('registerSuccess'));
-        navigate('/volunteers', { replace: true });
-      } else {
-        toast.success('Verifique seu email para confirmar a conta');
-        navigate('/auth', { replace: true });
+      let sessionUser = data.user;
+      let accessToken = data.session?.access_token;
+      if (!data.session) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        sessionUser = signInData.user;
+        accessToken = signInData.session?.access_token;
       }
+      const profile = await getOrCreateSvcProfile(sessionUser, {
+        display_name: name,
+        role: 'helper',
+        categories: helpCategories,
+      });
+      await login(accessToken, normalizeAuthUser(sessionUser, profile));
+      toast.success(t('registerSuccess'));
+      navigate('/volunteers', { replace: true });
     } catch (error) {
       toast.error(error.message || t('registerError'));
     } finally {

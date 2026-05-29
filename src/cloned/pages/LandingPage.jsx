@@ -5,7 +5,8 @@ import { Button } from '../components/ui/button';
 import { Search, Briefcase, MapPin, Star } from 'lucide-react';
 import i18n from '../i18n';
 import AuthModal from '../components/AuthModal';
-import goiasTrabalhoImg from '@/assets/goias-trabalho.jpg';
+import CountryMonuments from '@/components/CountryMonuments';
+import heroImg from '@/assets/monument-brasil.jpg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -28,21 +29,34 @@ export default function LandingPage() {
     >
       {/* Header */}
       <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-orange-400 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              W
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center sm:justify-between gap-4">
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-orange-400 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                W
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold">
+                  <span className="text-green-500">PertoDeMim</span>
+                  <span className="text-orange-500">Servicos</span>
+                </span>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Trabalho em Goiás</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold">
-                <span className="text-green-500">PertoDeMim</span>
-                <span className="text-orange-500">Servicos</span>
-              </span>
-              <span className="text-[10px] text-gray-500 uppercase tracking-wide">Trabalho em Goiás</span>
+            <div className="flex sm:hidden items-center space-x-1 text-xs">
+              {['PT', 'FR', 'EN', 'ES'].map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => changeLanguage(lang)}
+                  className={`px-2 py-1 rounded ${language === lang ? 'bg-green-100 text-green-700 font-semibold' : 'text-gray-600'}`}
+                >
+                  {lang}
+                </button>
+              ))}
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1 text-xs sm:text-sm">
+          <div className="flex flex-col sm:flex-row items-center w-full sm:w-auto gap-3 sm:gap-3">
+            <div className="hidden sm:flex items-center space-x-1 text-sm">
               {['PT', 'FR', 'EN', 'ES'].map((lang) => (
                 <button
                   key={lang}
@@ -54,24 +68,27 @@ export default function LandingPage() {
                 </button>
               ))}
             </div>
-            <Button
-              variant="outline"
-              onClick={() => openAuth('login')}
-              className="border-gray-300 rounded-full"
-              data-testid="landing-login-btn"
-            >
-              {t('login') || 'Entrar'}
-            </Button>
-            <Button
-              onClick={() => openAuth('signup')}
-              className="bg-gray-900 hover:bg-gray-800 text-white rounded-full"
-              data-testid="landing-register-btn"
-            >
-              {t('register') || 'Criar conta'}
-            </Button>
+            <div className="flex items-center justify-center gap-3 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={() => openAuth('login')}
+                className="border-gray-300 rounded-full flex-1 sm:flex-none"
+                data-testid="landing-login-btn"
+              >
+                {t('login') || 'Entrar'}
+              </Button>
+              <Button
+                onClick={() => openAuth('signup')}
+                className="bg-gray-900 hover:bg-gray-800 text-white rounded-full flex-1 sm:flex-none"
+                data-testid="landing-register-btn"
+              >
+                {t('register') || 'Criar conta'}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
+
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} mode={authMode} onModeChange={setAuthMode} />
 
@@ -79,32 +96,32 @@ export default function LandingPage() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="mb-8">
+          <div className="text-center lg:text-left">
+            <div className="mb-8 flex justify-center lg:justify-start">
               <div className="inline-flex items-center space-x-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
                 <span className="text-primary font-semibold flex items-center space-x-1">
                   <Star className="w-4 h-4 fill-secondary text-secondary" />
                   <span>4.9/5</span>
                 </span>
-                <span className="text-gray-600 text-sm">+2.000 vagas preenchidas em Goiás</span>
+                <span className="text-gray-600 text-sm">+10.000 conexões solidárias ao redor do mundo</span>
               </div>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold mb-6">
-              Seu próximo emprego
+              Serviços de verdade,
               <br />
-              <span className="text-primary">está aqui em Goiás</span>
+              <span className="text-primary">com alma solidária</span>
             </h1>
             <p className="text-lg text-gray-700 mb-2 font-medium">
-              Conectamos trabalhadores e empresas em todo o estado — do Cerrado às grandes cidades.
+              A rede que une quem precisa de um serviço a quem tem talento — e a quem quer ajudar sem esperar nada em troca.
             </p>
             <p className="text-base text-gray-600 mb-4">
-              Agronegócio, indústria, comércio, serviços e tecnologia: encontre oportunidades reais perto de você ou anuncie sua vaga em minutos.
+              Encontre profissionais perto de você, ofereça seu trabalho ou doe seu tempo como voluntário. Aqui cada conexão constrói uma comunidade mais forte.
             </p>
-            <div className="flex items-center space-x-2 mb-8 text-sm text-gray-600">
+            <div className="flex items-center justify-center lg:justify-start space-x-2 mb-8 text-sm text-gray-600">
               <MapPin className="w-5 h-5 text-primary" />
-              <span>Goiânia, Anápolis, Aparecida, Rio Verde, Jataí, Catalão e mais</span>
+              <span>Brasil, França, Portugal, Itália, Suíça, Espanha e mais</span>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-center lg:justify-start">
               <Button
                 onClick={() => openAuth('signup')}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 text-base rounded-full"
@@ -116,35 +133,54 @@ export default function LandingPage() {
               <Button
                 onClick={() => openAuth('signup')}
                 variant="outline"
-                className="border-2 border-secondary text-secondary-foreground bg-secondary/10 hover:bg-secondary/20 h-14 px-8 text-base rounded-full"
+                className="border-2 border-secondary text-gray-900 bg-white hover:bg-secondary/10 h-14 px-8 text-base rounded-full font-semibold"
                 data-testid="cta-want-help"
               >
                 <Briefcase className="w-5 h-5 mr-2" />
                 Publicar Vaga
               </Button>
             </div>
+            <div className="flex flex-col sm:flex-row gap-4 mb-12 items-center justify-center lg:justify-start">
+              <Button
+                onClick={() => openAuth('signup')}
+                className="bg-green-500 hover:bg-green-600 text-white h-12 px-6 text-sm rounded-full"
+                data-testid="cta-search-services"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Buscar Serviços
+              </Button>
+              <Button
+                onClick={() => navigate('/oferecer-servicos')}
+                variant="outline"
+                className="border-2 border-orange-400 text-orange-600 bg-white hover:bg-orange-50 h-12 px-6 text-sm rounded-full font-semibold"
+                data-testid="cta-offer-services"
+              >
+                <Briefcase className="w-4 h-4 mr-2" />
+                Oferecer Serviços
+              </Button>
+            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mt-8">
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">2.000+</p>
-                <p className="text-sm text-gray-600">Vagas ativas</p>
+                <p className="text-3xl font-bold text-primary">10k+</p>
+                <p className="text-sm text-gray-600">Serviços conectados</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">800+</p>
-                <p className="text-sm text-gray-600">Empresas parceiras</p>
+                <p className="text-3xl font-bold text-primary">2.500+</p>
+                <p className="text-sm text-gray-600">Voluntários ativos</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">246</p>
-                <p className="text-sm text-gray-600">Municípios goianos</p>
+                <p className="text-3xl font-bold text-primary">30+</p>
+                <p className="text-sm text-gray-600">Países conectados</p>
               </div>
             </div>
           </div>
           <div className="relative">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <img
-                src={goiasTrabalhoImg}
-                alt="Trabalhadores de Goiás — agronegócio, indústria e serviços"
+                src={heroImg}
+                alt="Comunidade global — conectando pessoas em todo o mundo"
                 width={1024}
                 height={1024}
                 className="w-full h-[500px] object-cover"
@@ -154,15 +190,17 @@ export default function LandingPage() {
         </div>
       </div>
 
+      <CountryMonuments />
+
       {/* Bottom CTA */}
       <div className="bg-primary py-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
           <div className="mb-4 md:mb-0">
             <p className="text-primary-foreground text-lg font-medium mb-1">
-              Goiás está contratando. Não fique de fora.
+              Faça parte da maior rede de serviços solidários.
             </p>
             <p className="text-primary-foreground/90 text-sm">
-              Cadastre-se grátis e receba vagas da sua região direto no seu perfil.
+              Cadastre-se grátis e comece a transformar vidas — incluindo a sua.
             </p>
           </div>
           <div className="flex items-center space-x-4">

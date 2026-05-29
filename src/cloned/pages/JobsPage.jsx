@@ -4,10 +4,28 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import BottomNav from '../components/BottomNav';
-import { Search, MapPin, Star, Clock, MessageCircle, Plus, Filter, Briefcase, Wrench, Home, Car, Utensils, Heart, GraduationCap, Monitor, Baby, Flower2, Package, MoreHorizontal, ExternalLink, Globe } from 'lucide-react';
+import { Search, MapPin, Clock, MessageCircle, Plus, Filter, Wrench, Brush, Lightbulb, Droplets, Hammer, BrickWall, Sparkles, Leaf, Truck, Settings, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { WORK_SERVICE_CATEGORIES, prettifyCategoryLabel } from '../lib/serviceCategories';
+import { saveLastJobSearch } from '../lib/jobSearchBridge';
+import { requestLocationPermission } from '../utils/geolocation';
+import { useUserLocation, setUserLocation as setSharedLocation } from '../lib/userLocation';
+import { Loader2, Navigation } from 'lucide-react';
+
+const extractCityFromAddress = (address = '') => {
+  if (!address) return '';
+  const ignored = /^(brasil|brazil|rua|avenida|av\.?|rodovia|estrada|travessa|praça|cep|state of|região|region)$/i;
+  const parts = String(address).split(',').map((s) => s.trim()).filter(Boolean);
+  const city = parts.find((p) => !/^\d/.test(p) && p.length > 2 && !ignored.test(p));
+  return city || parts.find((p) => p.length > 2) || '';
+};
+
+const getLocationSearchCity = (loc, fallback = 'São Paulo') => {
+  if (!loc) return fallback;
+  return loc.city || extractCityFromAddress(loc.address) || loc.region || fallback;
+};
 
 // Plataformas de emprego externas (Brasil)
 const JOB_PLATFORMS = [
@@ -93,39 +111,54 @@ const JOB_PLATFORMS = [
   }
 ];
 
-// Categorias de serviços (estilo AlloVoisins)
+const CATEGORY_ICONS = {
+  reformas: Wrench,
+  pintura: Brush,
+  eletrica: Lightbulb,
+  hidraulica: Droplets,
+  marcenaria: Hammer,
+  pedreiro: BrickWall,
+  limpeza: Sparkles,
+  jardinagem: Leaf,
+  transporte: Truck,
+  mecanica: Settings,
+  outros: Plus,
+};
+
 const SERVICE_CATEGORIES = [
   { value: 'all', label: 'Todos', icon: Filter },
-  { value: 'bricolage', label: 'Bricolagem', icon: Wrench, emoji: '🔧' },
-  { value: 'cleaning', label: 'Limpeza', icon: Home, emoji: '🧹' },
-  { value: 'transport', label: 'Transporte', icon: Car, emoji: '🚗' },
-  { value: 'food', label: 'Alimentação', icon: Utensils, emoji: '🍽️' },
-  { value: 'care', label: 'Bem-estar', icon: Heart, emoji: '💆' },
-  { value: 'education', label: 'Aulas', icon: GraduationCap, emoji: '📚' },
-  { value: 'tech', label: 'Informática', icon: Monitor, emoji: '💻' },
-  { value: 'childcare', label: 'Crianças', icon: Baby, emoji: '👶' },
-  { value: 'garden', label: 'Jardinagem', icon: Flower2, emoji: '🌱' },
-  { value: 'moving', label: 'Mudança', icon: Package, emoji: '📦' },
-  { value: 'other', label: 'Outros', icon: MoreHorizontal, emoji: '➕' }
+  ...WORK_SERVICE_CATEGORIES.map((category) => ({
+    ...category,
+    icon: CATEGORY_ICONS[category.value] || Wrench,
+  })),
 ];
 
 // Termos de busca sugeridos por categoria (Brasil - Português)
 const SEARCH_SUGGESTIONS = {
-  'bricolage': ['eletricista', 'encanador', 'marceneiro', 'pintor'],
-  'cleaning': ['auxiliar de limpeza', 'faxineira', 'diarista'],
-  'transport': ['motorista', 'entregador', 'motoboy'],
-  'food': ['cozinheiro', 'garçom', 'auxiliar de cozinha', 'atendente'],
-  'care': ['cuidador de idosos', 'técnico de enfermagem', 'enfermeiro'],
-  'education': ['professor', 'instrutor', 'monitor'],
-  'tech': ['desenvolvedor', 'analista de sistemas', 'técnico de TI'],
-  'childcare': ['babá', 'auxiliar de creche', 'pajem'],
-  'garden': ['jardineiro', 'paisagista'],
-  'moving': ['ajudante de mudança', 'carregador', 'logística']
+  reformas: ['reformas', 'manutenção residencial', 'faz tudo', 'reparos'],
+  pintura: ['pintor', 'pintura residencial', 'pintura de parede'],
+  eletrica: ['eletricista', 'instalação elétrica', 'manutenção elétrica'],
+  hidraulica: ['encanador', 'bombeiro hidráulico', 'vazamento'],
+  marcenaria: ['marceneiro', 'carpinteiro', 'móveis planejados'],
+  pedreiro: ['pedreiro', 'construção civil', 'alvenaria'],
+  limpeza: ['auxiliar de limpeza', 'faxineira', 'diarista'],
+  jardinagem: ['jardineiro', 'paisagista', 'poda de jardim'],
+  transporte: ['motorista', 'entregador', 'frete', 'mudança'],
+  mecanica: ['mecânico', 'mecânico de autos', 'manutenção automotiva'],
+  outros: ['serviços gerais', 'ajudante', 'profissional autônomo'],
 };
 
+const normalizeText = (value = '') => String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 export default function JobsPage() {
-  const { token, user } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+  const { location: sharedLocation } = useUserLocation();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const profileCategories = Array.isArray(user?.categories) ? user.categories.filter(Boolean) : [];
+  const [requestedCategories, setRequestedCategories] = useState([]);
+  const userInterestCategories = Array.from(new Set([...profileCategories, ...requestedCategories])).filter(Boolean);
+  const primaryUserCategory = userInterestCategories[0] || 'all';
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('São Paulo');
@@ -134,22 +167,55 @@ export default function JobsPage() {
   const [externalJobs, setExternalJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [showCreateOffer, setShowCreateOffer] = useState(false);
   const [viewMode, setViewMode] = useState('search'); // 'search', 'platforms', 'offers' ou 'seekers'
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [totalJobs, setTotalJobs] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
+  const [openedMatchedOffers, setOpenedMatchedOffers] = useState(false);
+  const [locating, setLocating] = useState(false);
 
-  // Sem tradução: busca usa termos em português (Brasil)
-  const translateSearchTerm = (term) => term;
+  const autoLocateAndSearch = async ({ silent = false, forceBrowser = false } = {}) => {
+    setLocating(true);
+    const loc = await requestLocationPermission({
+      forceBrowser,
+      showToast: !silent,
+      fallbackLocation: sharedLocation || { lat: -23.5505, lng: -46.6333, city: user?.city || 'São Paulo', address: `${user?.city || 'São Paulo'}, Brasil`, source: 'fallback' },
+    });
+    setLocating(false);
+    if (!loc) {
+      if (!silent) toast.error('Não foi possível obter sua localização');
+      return null;
+    }
+    setSharedLocation(loc); // sincroniza com todos os mapas do app
+    const city = getLocationSearchCity(loc, user?.city || locationQuery || 'São Paulo');
+    setLocationQuery(city);
+    if (!silent) toast.success(`📍 Buscando vagas em ${city}`);
+    const term = (searchQuery && searchQuery.trim())
+      || SEARCH_SUGGESTIONS[selectedCategory]?.[0]
+      || SEARCH_SUGGESTIONS[primaryUserCategory]?.[0]
+      || 'emprego';
+    searchExternalJobs(term, city);
+    return city;
+  };
 
   useEffect(() => {
     fetchJobs();
-    // Buscar vagas externas na inicialização
-    searchExternalJobs('emprego', 'Brasil');
-  }, []);
+    const initialCategory = primaryUserCategory !== 'all' ? primaryUserCategory : 'all';
+    const initialQuery = SEARCH_SUGGESTIONS[initialCategory]?.[0] || 'emprego';
+    setSelectedCategory(initialCategory);
+    setSearchQuery(initialQuery === 'emprego' ? '' : initialQuery);
+    // Tenta detectar localização automaticamente (via IP, sem prompt)
+    (async () => {
+      const city = await autoLocateAndSearch({ silent: true });
+      if (!city) {
+        const initialLocation = user?.city || 'São Paulo';
+        setLocationQuery(initialLocation);
+        searchExternalJobs(initialQuery, initialLocation);
+      }
+    })();
+  }, [user?.id]);
 
   useEffect(() => {
     if (selectedCategory !== 'all') {
@@ -158,64 +224,134 @@ export default function JobsPage() {
     }
   }, [selectedCategory]);
 
+  // Reage quando a localização compartilhada muda (perfil, GPS automático, etc.)
+  useEffect(() => {
+    if (!sharedLocation?.address && !sharedLocation?.lat) return;
+    const city = getLocationSearchCity(sharedLocation, locationQuery);
+    if (city && city !== locationQuery) {
+      setLocationQuery(city);
+      const term = (searchQuery && searchQuery.trim()) || SEARCH_SUGGESTIONS[selectedCategory]?.[0] || 'emprego';
+      searchExternalJobs(term, city);
+    }
+  }, [sharedLocation?.lat, sharedLocation?.lng, sharedLocation?.address]);
+
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      // Buscar todos os posts
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/posts`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Filtrar posts de trabalho
-        const workPosts = data.filter(p => p.category === 'work');
-        
-        // Separar ofertas e procuras
-        const offers = workPosts.filter(p => p.type === 'offer');
-        const seekers = workPosts.filter(p => p.type === 'need');
-        
-        setJobOffers(offers);
-        setJobSeekers(seekers);
+      const { data, error } = await supabase
+        .from('svc_posts')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      const ids = Array.from(new Set((data || []).map((p) => p.user_id).filter(Boolean)));
+      let profileMap = {};
+      if (ids.length) {
+        const { data: profiles } = await supabase
+          .from('svc_profiles')
+          .select('user_id, display_name, avatar_url, categories, city')
+          .in('user_id', ids);
+        (profiles || []).forEach((profile) => { profileMap[profile.user_id] = profile; });
       }
+      const posts = (data || []).map((p) => ({
+        ...p,
+        category: p.category_slug,
+        type: p.post_type === 'volunteer' ? 'offer' : 'need',
+        location: p.address || profileMap[p.user_id]?.city || 'Brasil',
+        user: {
+          name: profileMap[p.user_id]?.display_name || 'Usuário',
+          avatar: profileMap[p.user_id]?.avatar_url,
+          categories: profileMap[p.user_id]?.categories || [],
+        },
+      }));
+      setRequestedCategories(Array.from(new Set(
+        posts
+          .filter((p) => p.user_id === user?.id && p.type === 'need' && p.category)
+          .map((p) => p.category)
+      )));
+      setJobOffers(posts.filter((p) => p.type === 'offer'));
+      setJobSeekers(posts.filter((p) => p.type === 'need'));
+      return posts;
     } catch (error) {
       console.error('Error fetching jobs:', error);
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  // Buscar vagas via edge function (carrega resultados DENTRO do app)
-  const searchExternalJobs = async (query, location, page = 1) => {
+  // Buscar vagas via API pública Remotive (CORS habilitado) — sem edge function
+  const searchExternalJobs = async (query, location, page = 1, nextViewMode = 'search') => {
     setSearchLoading(true);
+    setViewMode(nextViewMode);
     try {
       const q = (query || 'emprego').trim();
       const loc = (location || 'Brasil').trim();
+      const platformResults = JOB_PLATFORMS.map((platform) => ({
+        id: `platform-${platform.id}-${q}-${loc}`,
+        title: `${q} em ${loc}`,
+        company: platform.name,
+        company_logo: null,
+        location: loc,
+        url: generateSearchUrl(platform, q, loc),
+        description: `Abrir busca de ${q} em ${loc} diretamente no ${platform.name}.`,
+        salary: null,
+        category: 'Busca direta',
+        publication_date: new Date().toISOString(),
+        source: platform.name,
+        isPlatformSearch: true,
+      }));
 
-      const { data, error } = await supabase.functions.invoke('jobs-search', {
-        body: { query: q, location: loc },
-        // Suporte a query string também
-        method: 'POST',
-      });
+      const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=30`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Falha na busca');
+      const json = await res.json();
+      const jobs = (json?.jobs || []).map((j) => ({
+        id: j.id,
+        title: j.title,
+        company: j.company_name,
+        company_logo: j.company_logo,
+        location: j.candidate_required_location || loc,
+        url: j.url,
+        description: j.description,
+        salary: j.salary,
+        category: j.category,
+        publication_date: j.publication_date,
+        source: 'Remotive',
+      }));
 
-      if (error) throw error;
-
-      const jobs = Array.isArray(data?.jobs) ? data.jobs : [];
-      setExternalJobs(jobs);
-      setTotalJobs(jobs.length);
+      const combinedJobs = [...platformResults, ...jobs];
+      setExternalJobs(combinedJobs);
+      setTotalJobs(combinedJobs.length);
       setCurrentPage(page);
-      setViewMode('search');
+      setViewMode(nextViewMode);
+      saveLastJobSearch({ userId: user?.id, query: q, location: loc, category: selectedCategory, jobs: combinedJobs });
 
-      if (jobs.length > 0) {
-        toast.success(`${jobs.length} vagas carregadas!`);
+      if (combinedJobs.length > 0) {
+        toast.success(`${combinedJobs.length} opções de emprego carregadas!`);
       } else {
         toast.info('Nenhuma vaga encontrada. Tente outros termos.');
       }
     } catch (err) {
       console.error('Erro ao buscar vagas:', err);
-      toast.error('Não foi possível carregar as vagas. Tente novamente.');
-      setExternalJobs([]);
-      setTotalJobs(0);
+      const q = (query || 'emprego').trim();
+      const loc = (location || 'Brasil').trim();
+      const fallbackJobs = JOB_PLATFORMS.map((platform) => ({
+        id: `fallback-${platform.id}-${q}-${loc}`,
+        title: `${q} em ${loc}`,
+        company: platform.name,
+        company_logo: null,
+        location: loc,
+        url: generateSearchUrl(platform, q, loc),
+        description: `A busca externa falhou, mas você pode abrir esta pesquisa diretamente no ${platform.name}.`,
+        source: platform.name,
+        isPlatformSearch: true,
+      }));
+      toast.info('Busca externa instável; mostrando plataformas brasileiras para pesquisar direto.');
+      setExternalJobs(fallbackJobs);
+      setTotalJobs(fallbackJobs.length);
+      saveLastJobSearch({ userId: user?.id, query: q, location: loc, category: selectedCategory, jobs: fallbackJobs });
     } finally {
       setSearchLoading(false);
     }
@@ -229,8 +365,17 @@ export default function JobsPage() {
       toast.error('Digite algo para buscar');
       return;
     }
-    searchExternalJobs(searchQuery, locationQuery, 1);
-    setViewMode('search');
+    const term = normalizeText(searchQuery.trim());
+    const requestedMatches = jobSeekers.filter((item) => {
+      const matchesCategory = selectedCategory === 'all' || itemMatchesCategories(item, [selectedCategory]);
+      return matchesCategory && itemMatchesSearch(item, term);
+    });
+    const offerMatches = jobOffers.filter((item) => {
+      const matchesCategory = selectedCategory === 'all' || itemMatchesCategories(item, [selectedCategory]);
+      return matchesCategory && itemMatchesSearch(item, term);
+    });
+    const nextViewMode = requestedMatches.length > 0 ? 'seekers' : offerMatches.length > 0 ? 'offers' : 'search';
+    searchExternalJobs(searchQuery, locationQuery, 1, nextViewMode);
   };
 
   const getTimeAgo = (dateString) => {
@@ -300,14 +445,80 @@ export default function JobsPage() {
     toast.success(`Abrindo ${platform.name}...`);
   };
 
-  const displayData = viewMode === 'offers' ? jobOffers : jobSeekers;
+  const itemMatchesSearch = (item, term) => {
+    if (!term) return true;
+    const itemCategory = item.category || item.category_slug || '';
+    const haystack = normalizeText(`${item.title || ''} ${item.description || ''} ${item.location || ''} ${item.address || ''} ${item.budget_range || ''} ${item.user?.name || ''} ${itemCategory} ${prettifyCategoryLabel(itemCategory)}`);
+    return haystack.includes(term);
+  };
+
+  const itemMatchesCategories = (item, categories) => {
+    if (!categories.length) return true;
+    const itemCategory = item.category || item.category_slug || '';
+    const haystack = normalizeText(`${item.title || ''} ${item.description || ''} ${itemCategory} ${prettifyCategoryLabel(itemCategory)}`);
+    return categories.some((category) => {
+      const label = prettifyCategoryLabel(category);
+      return itemCategory === category || haystack.includes(normalizeText(category)) || haystack.includes(normalizeText(label));
+    });
+  };
+
+  const filterAndSortCommunityItems = (items) => {
+    const searchTerm = normalizeText(searchQuery.trim());
+    const filtered = items.filter((item) => {
+      const matchesCategory = selectedCategory === 'all' || itemMatchesCategories(item, [selectedCategory]);
+      return matchesCategory && itemMatchesSearch(item, searchTerm);
+    });
+
+    if (!userInterestCategories.length) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      const aMatch = itemMatchesCategories(a, userInterestCategories) ? 1 : 0;
+      const bMatch = itemMatchesCategories(b, userInterestCategories) ? 1 : 0;
+      return bMatch - aMatch;
+    });
+  };
+
+  const visibleJobOffers = filterAndSortCommunityItems(jobOffers);
+  const visibleJobSeekers = filterAndSortCommunityItems(jobSeekers);
+  const displayData = viewMode === 'offers' ? visibleJobOffers : visibleJobSeekers;
+  const selectedCategoryLabel = selectedCategory === 'all' ? 'todos os tipos de trabalho' : prettifyCategoryLabel(selectedCategory);
+  const matchedOfferCount = jobOffers.filter((item) => itemMatchesCategories(item, userInterestCategories)).length;
+
+  useEffect(() => {
+    if (openedMatchedOffers || !userInterestCategories.length || !matchedOfferCount) return;
+    setSelectedCategory(userInterestCategories[0]);
+    setViewMode('offers');
+    setOpenedMatchedOffers(true);
+  }, [openedMatchedOffers, userInterestCategories.join('|'), matchedOfferCount]);
+
+  useEffect(() => {
+    const postId = new URLSearchParams(routeLocation.search).get('postId');
+    if (!postId) return;
+    (async () => {
+      const loadedPosts = [...jobOffers, ...jobSeekers].length ? [...jobOffers, ...jobSeekers] : await fetchJobs();
+      const found = (loadedPosts || []).find((item) => String(item.id) === String(postId));
+      if (found) {
+        setSelectedJob({
+          ...found,
+          title: found.title,
+          company: found.user?.name || 'Publicado no app',
+          company_logo: found.user?.avatar,
+          location: found.location || found.address || 'Brasil',
+          source: 'Publicado no app',
+          isCommunityPost: true,
+        });
+        setShowJobDetails(true);
+        setViewMode(found.type === 'offer' ? 'offers' : 'seekers');
+      }
+    })();
+  }, [routeLocation.search]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white pb-20" data-testid="jobs-page">
       {/* Header */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto max-w-4xl px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="container mx-auto max-w-4xl px-3 sm:px-4 py-2 sm:py-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
             <h1 className="text-xl font-bold text-gray-800">💼 Buscar Emprego</h1>
             <Button
               onClick={() => navigate('/home')}
@@ -321,7 +532,7 @@ export default function JobsPage() {
           </div>
 
           {/* Barra de Pesquisa Principal */}
-          <div className="bg-gradient-to-r from-blue-600 to-orange-600 rounded-2xl p-4 mb-4">
+          <div className="bg-gradient-to-r from-blue-600 to-orange-600 rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4">
             <p className="text-white text-sm mb-3 font-medium">🔍 Busque vagas em todas as plataformas</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
@@ -340,8 +551,17 @@ export default function JobsPage() {
                   placeholder="Cidade"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
-                  className="pl-10 rounded-xl bg-white h-12 w-full sm:w-36"
+                  className="pl-10 pr-10 rounded-xl bg-white h-12 w-full sm:w-44"
                 />
+                <button
+                  type="button"
+                  title="Usar minha localização"
+                  onClick={() => autoLocateAndSearch({ forceBrowser: true })}
+                  disabled={locating}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-blue-50 text-blue-600 disabled:opacity-50"
+                >
+                  {locating ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
+                </button>
               </div>
               <Button 
                 onClick={handleSearch}
@@ -374,7 +594,7 @@ export default function JobsPage() {
           </div>
 
           {/* Toggle de Modos */}
-          <div className="flex gap-2 mb-4 overflow-x-auto">
+          <div className="flex gap-2 mb-2 sm:mb-4 overflow-x-auto">
             <button
               onClick={() => setViewMode('search')}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
@@ -403,7 +623,7 @@ export default function JobsPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              🛠️ Serviços ({jobOffers.length})
+              🛠️ Ofertas ({visibleJobOffers.length})
             </button>
             <button
               onClick={() => setViewMode('seekers')}
@@ -413,9 +633,15 @@ export default function JobsPage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              👥 Procuram ({jobSeekers.length})
+              👥 Pedidos ({visibleJobSeekers.length})
             </button>
           </div>
+
+          {userInterestCategories.length > 0 && (
+            <div className="mb-3 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+              <strong>Conectado ao seu perfil:</strong> priorizando ofertas para {userInterestCategories.map(prettifyCategoryLabel).join(', ')}.
+            </div>
+          )}
 
           {/* Categorias de Serviços */}
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -441,7 +667,7 @@ export default function JobsPage() {
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="container mx-auto max-w-4xl px-4 py-4">
+      <div className="container mx-auto max-w-4xl px-3 sm:px-4 py-3 sm:py-4">
         
         {/* Modo: Resultados de Busca de Vagas */}
         {viewMode === 'search' && (
@@ -518,7 +744,11 @@ export default function JobsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-bold text-gray-800 line-clamp-1">{job.title}</h3>
-                            {job.is_remote && (
+                            {job.isPlatformSearch ? (
+                              <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs whitespace-nowrap">
+                                Busca direta
+                              </span>
+                            ) : job.is_remote && (
                               <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs whitespace-nowrap">
                                 🏠 Remoto
                               </span>
@@ -573,7 +803,7 @@ export default function JobsPage() {
                           size="sm"
                         >
                           <ExternalLink size={14} className="mr-1" />
-                          Candidatar-se
+                            {job.isPlatformSearch ? 'Abrir busca' : 'Candidatar-se'}
                         </Button>
                         <Button
                           onClick={(e) => {
@@ -642,7 +872,7 @@ export default function JobsPage() {
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                      {selectedJob.company?.charAt(0)}
+                      {selectedJob.company?.charAt(0) || '💼'}
                     </div>
                   )}
                   <div>
@@ -682,12 +912,16 @@ export default function JobsPage() {
                 {selectedJob.description && (
                   <div>
                     <h4 className="font-bold mb-2">📝 Descrição da Vaga</h4>
-                    <div 
-                      className="text-sm text-gray-600 prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ 
-                        __html: selectedJob.description.substring(0, 2000) 
-                      }}
-                    />
+                    {selectedJob.isCommunityPost ? (
+                      <p className="text-sm text-gray-600 whitespace-pre-line">{selectedJob.description}</p>
+                    ) : (
+                      <div 
+                        className="text-sm text-gray-600 prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: selectedJob.description.substring(0, 2000) 
+                        }}
+                      />
+                    )}
                   </div>
                 )}
 
@@ -709,11 +943,18 @@ export default function JobsPage() {
                 {/* Botões de ação */}
                 <div className="flex gap-3 pt-4 border-t">
                   <Button
-                    onClick={() => window.open(selectedJob.url, '_blank')}
+                    onClick={() => {
+                      if (selectedJob.isCommunityPost && selectedJob.user_id) {
+                        setShowJobDetails(false);
+                        navigate(`/direct-chat/${selectedJob.user_id}`);
+                        return;
+                      }
+                      if (selectedJob.url) window.open(selectedJob.url, '_blank');
+                    }}
                     className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700"
                   >
                     <ExternalLink size={16} className="mr-2" />
-                    Candidatar-se Agora
+                    {selectedJob.isCommunityPost ? 'Conversar sobre a vaga' : 'Candidatar-se Agora'}
                   </Button>
                   <Button
                     onClick={() => setShowJobDetails(false)}
@@ -725,7 +966,7 @@ export default function JobsPage() {
                 </div>
                 
                 <p className="text-xs text-gray-400 text-center">
-                  Fonte: {selectedJob.source} • Você será redirecionado para o site original
+                  {selectedJob.isCommunityPost ? 'Publicado dentro do app' : `Fonte: ${selectedJob.source} • Você será redirecionado para o site original`}
                 </p>
               </div>
             )}
@@ -848,15 +1089,20 @@ export default function JobsPage() {
                 variant={viewMode === 'offers' ? 'default' : 'outline'}
                 className={`flex-1 rounded-full ${viewMode === 'offers' ? 'bg-primary' : ''}`}
               >
-                🛠️ Ofertas de Serviço ({jobOffers.length})
+                🛠️ Ofertas de Trabalho ({visibleJobOffers.length})
               </Button>
               <Button
                 onClick={() => setViewMode('seekers')}
                 variant={viewMode === 'seekers' ? 'default' : 'outline'}
                 className={`flex-1 rounded-full ${viewMode === 'seekers' ? 'bg-green-600' : ''}`}
               >
-                🔍 Procuram Trabalho ({jobSeekers.length})
+                🔍 Pedidos de Trabalho ({visibleJobSeekers.length})
               </Button>
+            </div>
+
+            <div className="mb-4 rounded-2xl bg-white border border-gray-100 p-3 text-sm text-gray-700">
+              Mostrando {viewMode === 'offers' ? 'profissionais disponíveis' : 'usuários procurando profissional'} em <strong>{selectedCategoryLabel}</strong>.
+              {userInterestCategories.length > 0 && selectedCategory === 'all' && ' As categorias do seu perfil aparecem primeiro.'}
             </div>
 
             {/* Seção de Cards */}
@@ -890,7 +1136,10 @@ export default function JobsPage() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {displayData.map((item) => (
+                  {displayData.map((item) => {
+                    const matchesProfile = itemMatchesCategories(item, userInterestCategories);
+                    const itemCategoryLabel = prettifyCategoryLabel(item.category || item.category_slug);
+                    return (
                     <div 
                       key={item.id}
                       className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
@@ -912,13 +1161,16 @@ export default function JobsPage() {
                         <div>
                           <h3 className="font-bold text-gray-800">{item.user?.name || 'Usuário'}</h3>
                           <p className="text-sm text-primary font-medium">{item.title}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Categoria: {itemCategoryLabel}</p>
                         </div>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          viewMode === 'offers' 
-                            ? 'bg-blue-100 text-blue-700' 
+                          matchesProfile && userInterestCategories.length
+                            ? 'bg-primary/10 text-primary'
+                            : viewMode === 'offers' 
+                            ? 'bg-blue-100 text-blue-700'
                             : 'bg-green-100 text-green-700'
                         }`}>
-                          {viewMode === 'offers' ? 'Oferece' : 'Procura'}
+                          {matchesProfile && userInterestCategories.length ? 'Para você' : viewMode === 'offers' ? 'Oferece' : 'Procura'}
                         </span>
                       </div>
 
@@ -974,7 +1226,8 @@ export default function JobsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                  );
+                })}
             </div>
           )}
         </div>

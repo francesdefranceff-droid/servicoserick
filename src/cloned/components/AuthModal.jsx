@@ -23,15 +23,23 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
   const [password, setPassword] = useState('');
 
   // signup fields
-  const [role, setRole] = useState('migrant'); // migrant = Procuro / helper = Ofereço
-  const [name, setName] = useState('');
+  const [role, setRole] = useState('migrant');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [location, setLocation] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [serviceWanted, setServiceWanted] = useState('');
+  const [topics, setTopics] = useState([]);
+  const [urgentItems, setUrgentItems] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileRef = useRef(null);
 
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  const name = `${firstName} ${lastName}`.trim();
+
 
   const detectLocation = React.useCallback(() => {
     if (!navigator.geolocation) {
@@ -78,11 +86,47 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
   const setMode = (m) => onModeChange?.(m);
 
   const resetSignup = () => {
-    setName('');
+    setFirstName('');
+    setLastName('');
     setLocation('');
+    setMobile('');
+    setServiceWanted('');
+    setTopics([]);
+    setUrgentItems('');
     setAvatarFile(null);
     setAvatarPreview(null);
   };
+
+  const VOLUNTEER_TOPICS = [
+    'Distribuição de alimentos',
+    'Roupas e agasalhos',
+    'Apoio jurídico',
+    'Aulas de idioma',
+    'Saúde / primeiros socorros',
+    'Transporte',
+    'Acolhimento / abrigo',
+    'Tradução',
+    'Apoio psicológico',
+    'Cuidado infantil',
+  ];
+
+  const HELP_TOPICS = [
+    'Alimentos',
+    'Roupas',
+    'Abrigo',
+    'Medicamentos',
+    'Documentação',
+    'Trabalho',
+    'Transporte',
+    'Apoio jurídico',
+    'Apoio psicológico',
+    'Material escolar',
+  ];
+
+  const toggleTopic = (t) => {
+    setTopics((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  };
+
 
   const handleAvatarPick = (e) => {
     const f = e.target.files?.[0];
@@ -129,7 +173,15 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
       if (error) throw error;
 
       if (data.session) {
-        let profile = await getOrCreateSvcProfile(data.user, { display_name: name, role, city: location });
+        let profile = await getOrCreateSvcProfile(data.user, {
+          display_name: name,
+          role,
+          city: location,
+          categories: (role === 'volunteer' || role === 'needs_help')
+            ? topics
+            : (serviceWanted ? [serviceWanted.trim()] : []),
+          bio: role === 'needs_help' && urgentItems ? `Precisa urgentemente de: ${urgentItems}` : undefined,
+        });
         if (avatarFile && data.user) {
           const path = `${data.user.id}/avatar`;
           const { error: upErr } = await supabase.storage
@@ -145,8 +197,18 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
         toast.success('Conta criada!');
         onClose?.();
       } else {
-        toast.success('Verifique seu email para confirmar a conta');
-        setMode('login');
+        // Auto-confirm está ativo: faz login imediato para evitar e-mail de confirmação
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        const profile = await getOrCreateSvcProfile(signInData.user, {
+          display_name: name,
+          role,
+          city: location,
+        });
+        await login(signInData.session?.access_token, normalizeAuthUser(signInData.user, profile));
+        await refreshUser?.();
+        toast.success('Conta criada!');
+        onClose?.();
         resetSignup();
       }
     } catch (err) {
@@ -163,7 +225,7 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
       data-testid="auth-modal"
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto relative"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -216,65 +278,59 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
             </button>
           </div>
         ) : (
-          /* ============ SIGNUP ============ */
-          <div className="p-8 pt-6">
+          /* ============ SIGNUP (AlloVoisins-style compact) ============ */
+          <div className="px-6 pt-5 pb-6">
             <button
               type="button"
               onClick={() => setMode('login')}
-              className="flex items-center gap-1 text-sm text-primary hover:opacity-80 mb-4"
+              className="absolute top-4 left-4 p-1 rounded-full hover:bg-gray-100 text-gray-500"
               data-testid="signup-back"
+              aria-label="Voltar"
             >
-              <ArrowLeft className="w-4 h-4" /> Voltar
+              <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <h2 className="text-2xl font-bold text-center mb-5">Criar conta</h2>
-
             {/* role toggle */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <button
-                type="button"
-                onClick={() => setRole('migrant')}
-                className={`flex flex-col items-center justify-center py-4 rounded-xl border-2 transition-all ${
-                  role === 'migrant'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-                data-testid="role-procuro"
-              >
-                <Search className="w-6 h-6 mb-1.5" />
-                <span className="text-sm font-medium">Procuro serviço</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('helper')}
-                className={`flex flex-col items-center justify-center py-4 rounded-xl border-2 transition-all ${
-                  role === 'helper'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-                data-testid="role-ofereco"
-              >
-                <Wrench className="w-6 h-6 mb-1.5" />
-                <span className="text-sm font-medium">Ofereço serviço</span>
-              </button>
+            <div className="grid grid-cols-2 gap-2 mt-2 mb-4">
+              {[
+                { key: 'migrant', label: 'Procuro serviço' },
+                { key: 'helper', label: 'Ofereço serviço' },
+                { key: 'volunteer', label: 'Sou voluntário' },
+                { key: 'needs_help', label: 'Preciso de ajuda' },
+              ].map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  onClick={() => { setRole(r.key); setTopics([]); }}
+                  className={`text-xs font-medium py-1.5 rounded-full border transition ${
+                    role === r.key
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                  data-testid={`role-${r.key}`}
+                >
+                  {r.label}
+                </button>
+              ))}
             </div>
 
-            {/* avatar uploader */}
-            <div className="flex flex-col items-center mb-5">
-              <p className="text-sm text-gray-700 mb-2">Foto de perfil</p>
+
+            {/* avatar (opcional, discreto) */}
+            <div className="flex justify-center mb-4">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="relative w-24 h-24 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden hover:bg-gray-200 transition-colors"
+                className="relative w-16 h-16 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden hover:bg-gray-200 transition-colors"
                 data-testid="avatar-pick"
+                aria-label="Adicionar foto"
               >
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <Camera className="w-8 h-8 text-gray-400" />
+                  <Camera className="w-5 h-5 text-gray-400" />
                 )}
-                <span className="absolute bottom-0 right-0 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow">
-                  <Plus className="w-4 h-4" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow">
+                  <Plus className="w-3 h-3" />
                 </span>
               </button>
               <input
@@ -286,75 +342,152 @@ export default function AuthModal({ open, onClose, mode = 'login', onModeChange 
               />
             </div>
 
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-700">Nome completo</label>
+            <form onSubmit={handleSignup} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <input
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome"
-                  className="mt-1 w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  data-testid="signup-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Prénom"
+                  className="h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  data-testid="signup-firstname"
                 />
-              </div>
-              <div>
-                <label className="text-sm text-gray-700">Email</label>
                 <input
                   required
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  className="mt-1 w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  data-testid="signup-email"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Nom"
+                  className="h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  data-testid="signup-lastname"
                 />
               </div>
-              <div>
-                <label className="text-sm text-gray-700">Senha</label>
+
+              <div className="relative">
                 <input
-                  required
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="mt-1 w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  data-testid="signup-password"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={locating ? 'Detectando...' : 'Adresse postale'}
+                  className="w-full h-11 pl-3 pr-10 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  data-testid="signup-location"
                 />
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  disabled={locating}
+                  title="Usar minha localização"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-md bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center"
+                  data-testid="signup-locate"
+                >
+                  {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                </button>
               </div>
-              <div>
-                <label className="text-sm text-gray-700">Sua localização</label>
-                <div className="relative mt-1">
-                  <input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder={locating ? 'Detectando...' : 'Ex: São Paulo, SP'}
-                    className="w-full h-11 pl-4 pr-11 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    data-testid="signup-location"
-                  />
-                  <button
-                    type="button"
-                    onClick={detectLocation}
-                    disabled={locating}
-                    title="Usar minha localização"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-md bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center"
-                    data-testid="signup-locate"
-                  >
-                    {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-                  </button>
+
+              <input
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="Mobile"
+                className="w-full h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                data-testid="signup-mobile"
+              />
+
+              {(role === 'migrant' || role === 'helper') && (
+                <input
+                  value={serviceWanted}
+                  onChange={(e) => setServiceWanted(e.target.value)}
+                  placeholder={role === 'migrant' ? 'Serviço que procura (ex: pedreiro, garçom)' : 'Serviço que oferece (ex: eletricista)'}
+                  className="w-full h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  data-testid="signup-service-wanted"
+                />
+              )}
+
+              {role === 'volunteer' && (
+                <div>
+                  <p className="text-xs font-medium text-gray-700 mb-1.5">Como você pode ajudar?</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {VOLUNTEER_TOPICS.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => toggleTopic(t)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                          topics.includes(t)
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {role === 'needs_help' && (
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 mb-1.5">Do que você precisa urgentemente?</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {HELP_TOPICS.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => toggleTopic(t)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                            topics.includes(t)
+                              ? 'border-red-500 bg-red-50 text-red-600'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <textarea
+                    value={urgentItems}
+                    onChange={(e) => setUrgentItems(e.target.value)}
+                    placeholder="Objetos/itens específicos que precisa (ex: fralda P, leite, cobertor)"
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                  />
+                </div>
+              )}
+
+
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-mail"
+                className="w-full h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                data-testid="signup-email"
+              />
+
+              <input
+                required
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mot de passe"
+                className="w-full h-11 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                data-testid="signup-password"
+              />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 mt-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-primary-foreground font-semibold rounded-lg flex items-center justify-center transition-colors"
+                className="w-full h-11 mt-1 bg-gray-900 hover:bg-black disabled:opacity-60 text-white font-semibold rounded-full flex items-center justify-center transition-colors text-sm"
                 data-testid="signup-submit"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Continuar'}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "M'inscrire"}
               </button>
+
+              <p className="text-center text-[11px] text-gray-400 mt-1">Étape 2/2</p>
             </form>
           </div>
+
         )}
       </div>
     </div>

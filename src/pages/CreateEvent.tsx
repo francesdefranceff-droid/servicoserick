@@ -41,20 +41,16 @@ const CreateEvent = () => {
   const { onPlaceSelected } = useGooglePlacesAutocomplete(locationInputRef);
 
   useEffect(() => {
-    // Check auth state
+    // Check auth state (do NOT force the login modal on mount —
+    // only require login when the user actually tries to publish).
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
-      if (!session?.user) {
-        setShowAuthModal(true);
-      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
       if (session?.user) {
         setShowAuthModal(false);
-      } else {
-        setShowAuthModal(true);
       }
     });
 
@@ -192,6 +188,7 @@ const CreateEvent = () => {
           background_image_url: publicUrl,
           target_date: targetDate.toISOString(),
           creator: creatorName,
+          created_by: user.id,
         });
 
       if (insertError) throw insertError;

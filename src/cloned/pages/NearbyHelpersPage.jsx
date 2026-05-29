@@ -6,20 +6,12 @@ import { MapPin, Navigation, User, Phone, MessageCircle, Loader2, Filter, X, Ref
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { WORK_SERVICE_CATEGORIES, getWorkCategoryInfo } from '../lib/serviceCategories';
 
 const HELP_CATEGORIES = [
   { value: 'all', label: 'Todas as categorias', icon: '🌐' },
   { value: 'jobs', label: '💼 Vagas de Emprego', icon: '💼' },
-  { value: 'food', label: 'Alimentação', icon: '🍽️' },
-  { value: 'legal', label: 'Jurídico', icon: '⚖️' },
-  { value: 'health', label: 'Saúde', icon: '🏥' },
-  { value: 'housing', label: 'Moradia', icon: '🏠' },
-  { value: 'work', label: 'Emprego', icon: '💼' },
-  { value: 'education', label: 'Educação', icon: '📚' },
-  { value: 'social', label: 'Apoio Social', icon: '🤝' },
-  { value: 'clothes', label: 'Roupas', icon: '👕' },
-  { value: 'furniture', label: 'Móveis', icon: '🪑' },
-  { value: 'transport', label: 'Transporte', icon: '🚗' }
+  ...WORK_SERVICE_CATEGORIES,
 ];
 
 const CATEGORY_COLORS = {
@@ -420,9 +412,14 @@ export default function NearbyHelpersPage() {
             ${salaryInfo}
             ${job.is_remote ? '<span style="color: #22c55e; font-size: 11px;">🏠 Remoto</span><br/>' : ''}
             <span style="color: #3b82f6; font-size: 11px;">📍 ${job.distance || '?'} km</span><br/>
-            <a href="${job.url}" target="_blank" style="color: #2563eb; font-size: 12px; text-decoration: underline; font-weight: bold;">Ver Vaga →</a>
+            <button type="button" data-job-map-open="${job.id}" style="color: white; background: #2563eb; border: 0; border-radius: 999px; padding: 7px 12px; margin-top: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">Ver vaga →</button>
           </div>
         `);
+
+        marker.on('popupopen', () => {
+          const button = document.querySelector(`[data-job-map-open="${job.id}"]`);
+          button?.addEventListener('click', () => openJobDetails(job), { once: true });
+        });
 
         marker.on('click', () => {
           setSelectedJob(job);
@@ -446,7 +443,7 @@ export default function NearbyHelpersPage() {
   };
 
   const getCategoryInfo = (value) => {
-    return HELP_CATEGORIES.find(c => c.value === value) || { icon: '📝', label: value };
+    return HELP_CATEGORIES.find(c => c.value === value) || getWorkCategoryInfo(value);
   };
 
   const openGoogleMaps = (location) => {
@@ -455,6 +452,15 @@ export default function NearbyHelpersPage() {
 
   const openStreetView = (location) => {
     window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${location.lat},${location.lng}`, '_blank');
+  };
+
+  const openJobDetails = (job) => {
+    const localPostId = job.post_id || job.postId || job.svc_post_id || job.svcPostId || job.id;
+    if (job.url) {
+      window.open(job.url, '_blank');
+      return;
+    }
+    if (localPostId) navigate(`/jobs?postId=${encodeURIComponent(localPostId)}`);
   };
 
   const totalResults = (viewMode === 'all' ? nearbyHelpers.length + helpLocations.length + jobLocations.length : 
