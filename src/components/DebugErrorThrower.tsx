@@ -16,7 +16,11 @@ export const DebugErrorThrower = () => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
       if (typeof detail !== "string" || detail.length === 0) return;
-      console.info("lovable-debug-error", detail);
+      // Lança de forma assíncrona para virar "uncaught error" e acionar
+      // o overlay nativo "Try to Fix" SEM quebrar o render da árvore React.
+      setTimeout(() => {
+        throw new Error(detail);
+      }, 0);
     };
     window.addEventListener("lovable-debug-error", handler as EventListener);
     return () => window.removeEventListener("lovable-debug-error", handler as EventListener);
