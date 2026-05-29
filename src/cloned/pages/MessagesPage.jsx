@@ -28,6 +28,21 @@ const formatTime = (iso) => {
   }
 };
 
+const formatDaySeparator = (iso) => {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Hoje';
+    if (d.toDateString() === yesterday.toDateString()) return 'Ontem';
+    return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return '';
+  }
+};
+
 export default function MessagesPage() {
   const navigate = useNavigate();
   const { user, token } = useContext(AuthContext);
