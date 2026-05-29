@@ -3,7 +3,7 @@ import { AuthContext } from '../ClonedAuthContext';
 import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import BottomNav from '../components/BottomNav';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -22,6 +22,43 @@ export default function AIChat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Carrega lista de vozes (algumas plataformas precisam disparar este evento)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const load = () => window.speechSynthesis.getVoices();
+    load();
+    window.speechSynthesis.onvoiceschanged = load;
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
+  }, []);
+
+  const pickFemaleVoice = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices();
+    const isFemale = (v) => /female|mulher|feminin|woman|girl|luciana|maria|joana|fernanda|francisca|samantha|victoria|zira|google português( do brasil)?/i.test(`${v.name} ${v.voiceURI || ''}`);
+    return (
+      voices.find((v) => v.lang?.toLowerCase().startsWith('pt') && isFemale(v)) ||
+      voices.find((v) => v.lang?.toLowerCase().startsWith('pt')) ||
+      voices.find(isFemale) ||
+      voices[0] || null
+    );
+  };
+
+  const speak = (text) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'pt-BR';
+      u.rate = 1;
+      u.pitch = 1.15; // levemente mais agudo para reforçar voz feminina
+      const v = pickFemaleVoice();
+      if (v) u.voice = v;
+      window.speechSynthesis.speak(u);
+    } catch (e) {
+      console.warn('TTS falhou', e);
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -47,6 +84,7 @@ export default function AIChat() {
       if (response.ok) {
         const data = await response.json();
         setMessages(prev => [...prev, { role: 'ai', content: data.response }]);
+        speak(data.response);
       } else {
         toast.error('Erro ao enviar mensagem');
       }
@@ -115,6 +153,16 @@ export default function AIChat() {
                 msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
               }`}>
                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'ai' && (
+                  <button
+                    type="button"
+                    onClick={() => speak(msg.content)}
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    aria-label="Ouvir resposta"
+                  >
+                    <Volume2 size={14} /> Ouvir
+                  </button>
+                )}
               </div>
               {msg.role === 'user' && (
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
