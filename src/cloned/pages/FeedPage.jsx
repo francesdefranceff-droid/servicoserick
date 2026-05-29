@@ -1005,8 +1005,8 @@ export default function FeedPage() {
             <Film className="w-4 h-4 text-green-600" /> Storeteck
             <span className="text-[10px] uppercase tracking-wide bg-red-500 text-white px-1.5 py-0.5 rounded">novo</span>
           </h3>
-          <button onClick={() => navigate('/home?openSOS=1')} className="text-xs text-green-600 font-semibold hover:underline">
-            Publicar vídeo
+          <button onClick={() => navigate('/home?openSOS=1')} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 shadow-sm">
+            <Film className="w-3.5 h-3.5" /> Publicar vídeo
           </button>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar snap-x">
