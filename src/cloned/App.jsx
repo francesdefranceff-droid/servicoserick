@@ -110,6 +110,7 @@ function App() {
           <Route path="/volunteer-register" element={<VolunteerRegisterPage />} />
           <Route path="/assinatura" element={user ? <SubscriptionPage /> : <Navigate to="/" />} />
         </Routes>
+        {user && <PublishFab />}
       </BrowserRouter>
     </AuthContext.Provider>
   );
