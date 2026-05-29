@@ -218,31 +218,37 @@ export default function MessagesPage() {
           className={`${activeUserId ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[380px] border-r border-gray-200 bg-gradient-to-b from-white to-gray-50`}
           data-testid="conversations-list"
         >
-          {/* Header personalizado */}
-          <div className="px-5 pt-5 pb-3">
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">Mensagens</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {conversations.length} conversa{conversations.length !== 1 ? 's' : ''}
-                  {conversations.filter(c => c.unread).length > 0 && (
-                    <span className="ml-2 text-green-600 font-semibold">
-                      • {conversations.filter(c => c.unread).length} nova{conversations.filter(c => c.unread).length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </p>
-              </div>
+          {/* Tabs prominentes no topo */}
+          <div className="px-5 pt-5 pb-3 flex items-center gap-2">
+            {[
+              { id: 'all', label: 'Todas' },
+              { id: 'unread', label: 'Não lidas' },
+              { id: 'archived', label: 'Arquivadas' },
+            ].map((t) => (
               <button
-                onClick={() => navigate('/volunteers')}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-105"
-                data-testid="messages-edit-btn"
-                title="Nova conversa"
+                key={t.id}
+                onClick={() => setFilter(t.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  filter === t.id
+                    ? 'bg-gray-900 text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-400'
+                }`}
+                data-testid={`filter-${t.id}`}
               >
-                <Plus className="w-4 h-4" strokeWidth={2.5} />
+                {t.label}
               </button>
-            </div>
+            ))}
+            <button
+              onClick={() => navigate('/volunteers')}
+              className="ml-auto w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-105"
+              data-testid="messages-edit-btn"
+              title="Nova conversa"
+            >
+              <Plus className="w-4 h-4" strokeWidth={2.5} />
+            </button>
           </div>
 
+          {/* Search */}
           <div className="px-5 pb-3">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -254,34 +260,6 @@ export default function MessagesPage() {
                 data-testid="messages-search"
               />
             </div>
-          </div>
-
-          <div className="flex gap-1.5 px-5 pb-3">
-            {[
-              { id: 'all', label: 'Todas', count: conversations.length },
-              { id: 'unread', label: 'Não lidas', count: conversations.filter(c => c.unread).length },
-              { id: 'archived', label: 'Arquivadas', count: 0 },
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setFilter(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  filter === t.id
-                    ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
-                }`}
-                data-testid={`filter-${t.id}`}
-              >
-                {t.label}
-                {t.count > 0 && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                    filter === t.id ? 'bg-white/20' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {t.count}
-                  </span>
-                )}
-              </button>
-            ))}
           </div>
 
           <div className="flex-1 overflow-y-auto px-2">
