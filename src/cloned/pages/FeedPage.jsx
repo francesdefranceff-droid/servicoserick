@@ -897,6 +897,11 @@ export default function FeedPage() {
                 <span className="text-[10px]">Moradia</span>
               </button>
               <button onClick={() => navigate('/assinatura')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors" data-testid="nav-assinatura-desktop">
+                <span className="flex items-center gap-0.5 mb-0.5" aria-hidden="true">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                </span>
                 <BarChart3 className="w-5 h-5 mb-0.5" />
                 <span className="text-[10px]">Assinatura</span>
               </button>
