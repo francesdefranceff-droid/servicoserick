@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../ClonedAuthContext';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Search, Send, Star, ArrowLeft, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings } from 'lucide-react';
+import { Search, Send, Star, ArrowLeft, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Video, Phone, Share2, Pin, Archive, Flag, Ban, Paperclip, Camera, Calendar, CreditCard, MoreHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchChatConversations, fetchChatMessages, fetchChatUser, sendChatMessage } from '../lib/chatService';
 import { getStableDefaultAvatarUrl } from '../lib/authProfile';
