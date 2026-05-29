@@ -102,7 +102,12 @@ export default function AIChat() {
       if (response.ok) {
         const data = await response.json();
         setMessages(prev => [...prev, { role: 'ai', content: data.response }]);
-        speak(data.response);
+        if (utterance && window.speechSynthesis) {
+          utterance.text = data.response || '';
+          try { window.speechSynthesis.speak(utterance); } catch (_) { speak(data.response); }
+        } else {
+          speak(data.response);
+        }
       } else {
         toast.error('Erro ao enviar mensagem');
       }
