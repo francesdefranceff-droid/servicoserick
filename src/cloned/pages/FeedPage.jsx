@@ -16,6 +16,7 @@ import MiniGoogleMap from '../components/MiniGoogleMap';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, prettifyCategoryLabel } from '../lib/serviceCategories';
 import SupportChatWidget from '../components/SupportChatWidget';
+import ProfileStories from '../components/ProfileStories';
 
 // Local fallback store so the feed works even without auth/backend
 const LOCAL_KEY = 'cloned_feed_posts_v1';
@@ -991,6 +992,43 @@ export default function FeedPage() {
           </div>
         </>
       )}
+
+      {/* Stories + Ao vivo */}
+      <div className="max-w-[1200px] mx-auto px-3 lg:px-4 pt-3">
+        <ProfileStories avatarSrc={userAvatar} userName={user?.name || 'Você'} />
+      </div>
+
+      {/* Storeteck — vídeos curtos estilo TikTok */}
+      <section className="max-w-[1200px] mx-auto px-3 lg:px-4 py-3" data-testid="storeteck-reels">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <Film className="w-4 h-4 text-green-600" /> Storeteck
+            <span className="text-[10px] uppercase tracking-wide bg-red-500 text-white px-1.5 py-0.5 rounded">novo</span>
+          </h3>
+          <button onClick={() => navigate('/home?openSOS=1')} className="text-xs text-green-600 font-semibold hover:underline">
+            Publicar vídeo
+          </button>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar snap-x">
+          {(posts.filter(p => p.video_url || p.media?.some?.(m => m.endsWith?.('.mp4'))).slice(0, 12)).map((p, i) => {
+            const src = p.video_url || p.media?.find?.(m => m.endsWith?.('.mp4'));
+            return (
+              <div key={p.id || i} className="snap-start shrink-0 w-[140px] h-[240px] rounded-xl overflow-hidden bg-black relative group cursor-pointer">
+                <video src={src} muted loop playsInline className="w-full h-full object-cover" onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => e.currentTarget.pause()} />
+                <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/70 to-transparent text-white">
+                  <p className="text-[11px] font-semibold truncate">{p.user_name || p.title || 'Vídeo'}</p>
+                </div>
+              </div>
+            );
+          })}
+          {posts.filter(p => p.video_url || p.media?.some?.(m => m.endsWith?.('.mp4'))).length === 0 && (
+            <div className="w-full text-center text-xs text-gray-400 py-6">
+              Nenhum vídeo curto ainda. Seja o primeiro a publicar!
+            </div>
+          )}
+        </div>
+      </section>
+
 
       {/* Main Content */}
       <div className="max-w-[1200px] mx-auto px-3 lg:px-4 py-3">
