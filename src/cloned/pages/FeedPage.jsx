@@ -406,7 +406,6 @@ export default function FeedPage() {
     );
   }, []);
 
-  useEffect(() => { detectAddress(); }, [detectAddress]);
   const [postBudget, setPostBudget] = useState('Sob orçamento');
   const [postCategory, setPostCategory] = useState('reformas');
   const [customPostCategory, setCustomPostCategory] = useState('');
@@ -425,29 +424,7 @@ export default function FeedPage() {
   useEffect(() => {
     fetchPosts();
 
-    // Realtime: refetch when any svc_posts row changes
-    const channel = supabase
-      .channel('svc_posts_feed')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'svc_posts' }, () => {
-        fetchPosts();
-      })
-      .subscribe();
-
-    // Mobile: refetch when app returns to foreground or window regains focus
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchPosts(); };
-    const onFocus = () => fetchPosts();
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onFocus);
-
-    // Safety net: poll every 30s in case realtime/websocket is blocked on mobile networks
-    const interval = setInterval(fetchPosts, 30000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', onFocus);
-      clearInterval(interval);
-    };
+    return undefined;
   }, []);
 
   const fetchPosts = async () => {
@@ -740,7 +717,6 @@ export default function FeedPage() {
         publishLocalPost(guestId, publishMode);
         toast.success(publishMode === 'need' ? 'Sua demanda foi publicada neste aparelho!' : 'Seu serviço foi publicado neste aparelho!');
         clearPublishForm();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       const uid = activeUser.id || `local-user-${Date.now()}`;
@@ -778,7 +754,6 @@ export default function FeedPage() {
         publishLocalPost(uid, publishMode, uploadedUrls, uploadedVideos);
         toast.success(publishMode === 'need' ? 'Sua demanda foi publicada neste aparelho!' : 'Seu serviço foi publicado neste aparelho!');
         clearPublishForm();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -812,7 +787,6 @@ export default function FeedPage() {
       toast.success(publishMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
       clearPublishForm();
       await fetchPosts();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
       console.error(e);
       toast.error('Erro ao publicar');
