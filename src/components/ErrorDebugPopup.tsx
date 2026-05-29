@@ -33,6 +33,25 @@ const MAX_IMAGE_BYTES = 100_000_000; // 100MB por arquivo
 const MAX_TOTAL_BYTES = 500_000_000; // 500MB total
 const TARGET_IMAGE_BYTES = 2_500_000; // alvo após compressão de imagens: ~2.5MB
 const MAX_DIMENSION = 2048; // redimensiona lado maior para no máx 2048px
+const UPLOAD_TIMEOUT_MS = 90_000;
+
+const safeUploadPath = (fileName: string) => {
+  const extension = fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+  return `debug/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+};
+
+const withTimeout = async <T,>(promise: Promise<T>, label: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} demorou demais. Tente um arquivo menor ou novamente.`)), UPLOAD_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
 
 const fileToDataUrl = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -360,28 +379,30 @@ export const ErrorDebugPopup: React.FC = () => {
       try {
         for (const img of images) {
           const blob = dataUrlToBlob(img.dataUrl);
-          const ext = img.name.split(".").pop() || "jpg";
-          const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("debug-uploads")
-            .upload(path, blob, { contentType: img.type, upsert: false });
+          const path = safeUploadPath(img.name);
+          const { error: upErr } = await withTimeout(
+            supabase.storage
+              .from("debug-uploads")
+              .upload(path, blob, { contentType: img.type, cacheControl: "3600", upsert: false }),
+            `Upload de "${img.name}"`
+          );
           if (upErr) {
             setAttachError(`Falha no upload de "${img.name}": ${upErr.message}`);
-            setUploading(false);
             return;
           }
           const { data: pub } = supabase.storage.from("debug-uploads").getPublicUrl(path);
           uploadedImages.push({ name: img.name, url: pub.publicUrl, type: img.type });
         }
         for (const f of files) {
-          const ext = f.name.split(".").pop() || "bin";
-          const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("debug-uploads")
-            .upload(path, f.blob, { contentType: f.type, upsert: false });
+          const path = safeUploadPath(f.name);
+          const { error: upErr } = await withTimeout(
+            supabase.storage
+              .from("debug-uploads")
+              .upload(path, f.blob, { contentType: f.type, cacheControl: "3600", upsert: false }),
+            `Upload de "${f.name}"`
+          );
           if (upErr) {
             setAttachError(`Falha no upload de "${f.name}": ${upErr.message}`);
-            setUploading(false);
             return;
           }
           const { data: pub } = supabase.storage.from("debug-uploads").getPublicUrl(path);
@@ -389,10 +410,10 @@ export const ErrorDebugPopup: React.FC = () => {
         }
       } catch (e) {
         setAttachError(`Erro inesperado no upload: ${(e as Error).message}`);
-        setUploading(false);
         return;
+      } finally {
+        setUploading(false);
       }
-      setUploading(false);
 
       if (uploadedImages.length > 0) {
         message += `\n\n---\n${IMAGE_INSTRUCTIONS}\n\nIMAGENS ANEXADAS (${uploadedImages.length}):\n`;
