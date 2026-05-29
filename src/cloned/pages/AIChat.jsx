@@ -6,6 +6,8 @@ import BottomNav from '../components/BottomNav';
 import { Send, Bot, User, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AIChat() {
   const { token } = useContext(AuthContext);
