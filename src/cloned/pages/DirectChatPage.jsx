@@ -129,7 +129,11 @@ export default function DirectChatPage() {
   const [activeModal, setActiveModal] = useState(null); // 'refuse' | 'schedule' | 'payment' | 'more' | null
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleEndTime, setScheduleEndTime] = useState('');
+  const [scheduleMode, setScheduleMode] = useState('call'); // call | request_address | other_address
+  const [scheduleAddress, setScheduleAddress] = useState('');
   const [scheduleNote, setScheduleNote] = useState('');
+  const [paymentTab, setPaymentTab] = useState('pay'); // pay | request
   const [payAmount, setPayAmount] = useState('');
   const [payDescription, setPayDescription] = useState('');
   const [pixCharge, setPixCharge] = useState(null); // {brcode, qr_code_base64}
