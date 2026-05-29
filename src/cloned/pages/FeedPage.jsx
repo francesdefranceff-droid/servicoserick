@@ -1245,7 +1245,7 @@ export default function FeedPage() {
 
               {/* Vertical preview 9:16 */}
               <div className="px-4 pt-4">
-                <div className="relative mx-auto w-full max-w-[260px] aspect-[9/16] rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
+                <div className="relative mx-auto w-full max-w-[360px] sm:max-w-[420px] aspect-[9/16] rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
                   {selectedVideos.length > 0 ? (
                     <>
                       <VideoPlayer src={selectedVideos[0].dataUrl} className="w-full h-full object-cover" testid="tiktok-video-preview" />
