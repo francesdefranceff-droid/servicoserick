@@ -1206,6 +1206,11 @@ export default function FeedPage() {
             <BarChart3 className="w-6 h-6 text-gray-500" />
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 grid place-items-center rounded-full leading-none">1</span>
           </div>
+          <span className="flex items-center gap-0.5 -mb-0.5" aria-hidden="true">
+            <span className="w-1 h-1 rounded-full bg-green-500" />
+            <span className="w-1 h-1 rounded-full bg-orange-500" />
+            <span className="w-1 h-1 rounded-full bg-red-500" />
+          </span>
           <span className="text-[11px] text-gray-600">Assinatura</span>
         </button>
 
