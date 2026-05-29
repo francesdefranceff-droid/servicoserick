@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 export default function AdminDashboard() {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
+  const [deletingUserId, setDeletingUserId] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -68,9 +70,48 @@ export default function AdminDashboard() {
 
   const deletePost = async (id) => {
     if (!confirm('Excluir esta publicação?')) return;
-    const { error } = await supabase.from('svc_posts').delete().eq('id', id);
-    if (error) toast.error(error.message);
-    else { toast.success('Publicação removida'); loadAll(); }
+    setDeletingPostId(id);
+    try {
+      const { error } = await supabase.from('svc_posts').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Publicação removida');
+      await loadAll();
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível remover a publicação');
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
+
+  const deleteUser = async (profile) => {
+    if (!profile?.user_id) return;
+    if (profile.user_id === user?.id) {
+      toast.error('Você não pode apagar seu próprio usuário admin');
+      return;
+    }
+    const label = profile.display_name || profile.user_id.slice(0, 8);
+    if (!confirm(`Excluir o usuário ${label} e todos os dados dele?`)) return;
+
+    setDeletingUserId(profile.user_id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sessão expirada. Entre novamente.');
+
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId: profile.user_id },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('Usuário removido');
+      await loadAll();
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível remover o usuário');
+    } finally {
+      setDeletingUserId(null);
+    }
   };
 
   const setSubStatus = async (id, status) => {
@@ -178,6 +219,15 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-500 truncate">{u.role} · {u.city || 'sem cidade'} · {new Date(u.created_at).toLocaleDateString('pt-BR')}</p>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-gray-100">{u.role}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={deletingUserId === u.user_id || u.user_id === user?.id}
+                  onClick={() => deleteUser(u)}
+                  title={u.user_id === user?.id ? 'Não é possível apagar seu próprio usuário' : 'Excluir usuário'}
+                >
+                  {deletingUserId === u.user_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 text-red-600" />}
+                </Button>
               </div>
             ))}
           </div>
@@ -187,7 +237,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl shadow-sm divide-y">
             {filteredPosts.filter((p) => p.post_type !== 'volunteer').length === 0 && <p className="p-6 text-center text-gray-500">Nenhuma publicação.</p>}
             {filteredPosts.filter((p) => p.post_type !== 'volunteer').map((p) => (
-              <PostRow key={p.id} p={p} onDelete={deletePost} />
+              <PostRow key={p.id} p={p} onDelete={deletePost} deleting={deletingPostId === p.id} />
             ))}
           </div>
         )}
@@ -196,7 +246,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl shadow-sm divide-y">
             {filteredPosts.filter((p) => p.post_type === 'volunteer').length === 0 && <p className="p-6 text-center text-gray-500">Nenhum anúncio de serviço.</p>}
             {filteredPosts.filter((p) => p.post_type === 'volunteer').map((p) => (
-              <PostRow key={p.id} p={p} onDelete={deletePost} />
+              <PostRow key={p.id} p={p} onDelete={deletePost} deleting={deletingPostId === p.id} />
             ))}
           </div>
         )}
