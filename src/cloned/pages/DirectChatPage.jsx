@@ -447,7 +447,7 @@ export default function DirectChatPage() {
   const avatarUrl = (u) => u?.avatar_url || u?.avatar || getStableDefaultAvatarUrl(u);
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] pb-20 md:pb-0" data-testid="direct-chat-page">
+    <div className="min-h-screen bg-[#eff5ff] pb-20 md:pb-0" data-testid="direct-chat-page">
       {/* ===== MOBILE TOP CHAT HEADER (only mobile) ===== */}
       <header className="md:hidden bg-white border-b border-gray-200 sticky top-0 z-30 px-3 py-2.5 flex items-center gap-3">
         <button
