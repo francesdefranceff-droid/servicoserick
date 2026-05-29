@@ -397,23 +397,80 @@ export default function MessagesPage() {
                               ? 'bg-green-500 text-white rounded-tr-md'
                               : 'bg-white border border-gray-200 text-gray-900 rounded-tl-md shadow-sm'
                           }`}
-                          data-testid={`msg-${idx}`}
-                        >
-                          <p className="whitespace-pre-wrap break-words">{m.message}</p>
-                          <p className={`text-[10px] mt-1 ${fromMe ? 'text-white/80' : 'text-gray-500'}`}>
-                            {formatTime(m.created_at)}
-                          </p>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-green-50/40 to-white">
+                {messages.length === 0 ? (
+                  <p className="text-center text-gray-400 text-sm mt-8">Nenhuma mensagem ainda. Diga olá!</p>
+                ) : (
+                  messages.map((m, idx) => {
+                    const fromMe = m.is_from_me || m.from_user_id === user?.id;
+                    const prev = messages[idx - 1];
+                    const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
+                    return (
+                      <React.Fragment key={m.id || idx}>
+                        {showDay && (
+                          <div className="flex justify-center my-4">
+                            <span className="text-xs text-gray-500 font-medium px-3 py-1 bg-white/80 rounded-full border border-gray-100">
+                              {formatDaySeparator(m.created_at)}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`flex ${fromMe ? 'justify-end' : 'justify-start'}`}>
+                          <div
+                            className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
+                              fromMe
+                                ? 'bg-green-500 text-white rounded-tr-md'
+                                : 'bg-white border border-gray-200 text-gray-900 rounded-tl-md'
+                            }`}
+                            data-testid={`msg-${idx}`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                            <p className={`text-[10px] mt-1 ${fromMe ? 'text-white/80' : 'text-gray-500'}`}>
+                              {formatTime(m.created_at)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      </React.Fragment>
                     );
                   })
                 )}
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Quick actions bar */}
+              <div className="bg-white border-t border-gray-200 px-4 pt-3 pb-1">
+                <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+                  {[
+                    { icon: X, label: 'Recusar', color: 'text-gray-600', bg: 'bg-gray-100' },
+                    { icon: Calendar, label: 'Agendar', color: 'text-green-600', bg: 'bg-green-50' },
+                    { icon: CreditCard, label: 'Pagamento', color: 'text-orange-600', bg: 'bg-orange-50' },
+                    { icon: Star, label: 'Avaliação', color: 'text-amber-600', bg: 'bg-amber-50' },
+                    { icon: MoreHorizontal, label: 'Ver tudo', color: 'text-gray-700', bg: 'bg-gray-100' },
+                  ].map((a) => (
+                    <button
+                      key={a.label}
+                      onClick={() => toast.info(`${a.label} em breve`)}
+                      className="flex flex-col items-center gap-1 group"
+                      data-testid={`action-${a.label.toLowerCase()}`}
+                    >
+                      <span className={`w-10 h-10 rounded-xl ${a.bg} ${a.color} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                        <a.icon className="w-5 h-5" />
+                      </span>
+                      <span className="text-[10px] text-gray-600">{a.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Input */}
-              <div className="bg-white border-t border-gray-200 p-3">
-                <div className="flex items-end gap-2">
+              <div className="bg-white border-t border-gray-100 p-3">
+                <div className="flex items-center gap-2">
+                  <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500" title="Anexar">
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500" title="Foto">
+                    <Camera className="w-5 h-5" />
+                  </button>
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -443,28 +500,80 @@ export default function MessagesPage() {
 
         {/* Right: Profile panel (desktop only) */}
         {activeUser && (
-          <aside className="hidden xl:flex flex-col w-[300px] border-l border-gray-200 bg-white p-6 items-center" data-testid="profile-panel">
-            <Avatar className="w-24 h-24 mb-4">
-              <AvatarImage src={activeAvatar} />
-              <AvatarFallback className="text-2xl">{activeUser?.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <h3 className="text-lg font-bold">{activeUser?.name}</h3>
-            <div className="flex items-center gap-1 text-xs text-green-600 mb-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full" />
-              Online agora
+          <aside className="hidden xl:flex flex-col w-[300px] border-l border-gray-200 bg-white" data-testid="profile-panel">
+            <div className="flex flex-col items-center p-6 border-b border-gray-100">
+              <Avatar className="w-20 h-20 mb-3 ring-4 ring-green-50">
+                <AvatarImage src={activeAvatar} />
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-green-500 to-emerald-600 text-white">{activeUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+              <h3 className="text-base font-bold text-gray-900">{activeUser?.name}</h3>
+              <div className="flex items-center gap-1 text-xs mt-1">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-semibold text-gray-800">5/5</span>
+                <span className="text-gray-500">(2 avis)</span>
+              </div>
+
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={() => toast.info('Chamada de vídeo em breve')}
+                  className="w-11 h-11 rounded-full border border-gray-200 hover:bg-green-50 hover:border-green-200 flex items-center justify-center text-green-600 transition-colors"
+                  title="Vídeo"
+                >
+                  <Video className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => toast.info('Ligação em breve')}
+                  className="w-11 h-11 rounded-full border border-gray-200 hover:bg-green-50 hover:border-green-200 flex items-center justify-center text-green-600 transition-colors"
+                  title="Telefone"
+                >
+                  <Phone className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => navigate(`/profile/${activeUser.id}`)}
+                  className="px-4 h-11 rounded-full border border-gray-300 hover:border-gray-900 hover:bg-gray-900 hover:text-white text-sm font-semibold transition-colors"
+                  data-testid="view-full-profile"
+                >
+                  Ver perfil
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-sm">
-              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              <span className="font-semibold">5/5</span>
-              <span className="text-gray-500">(2 avis)</span>
+
+            <div className="p-4 space-y-1 text-sm">
+              <button
+                onClick={() => {
+                  if (navigator.share) navigator.share({ title: activeUser?.name, url: window.location.href }).catch(() => {});
+                  else { navigator.clipboard?.writeText(window.location.href); toast.success('Link copiado'); }
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-800"
+              >
+                <Share2 className="w-4 h-4 text-gray-500" /> Compartilhar perfil
+              </button>
+              <button
+                onClick={() => toast.success('Conversa fixada')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-800"
+              >
+                <Pin className="w-4 h-4 text-gray-500" /> Fixar conversa
+              </button>
+              <button
+                onClick={() => toast.success('Conversa arquivada')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-800"
+              >
+                <Archive className="w-4 h-4 text-gray-500" /> Arquivar conversa
+              </button>
+              <div className="border-t border-gray-100 my-2" />
+              <button
+                onClick={() => toast.warning('Perfil reportado')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 text-red-600"
+              >
+                <Flag className="w-4 h-4" /> Reportar perfil
+              </button>
+              <button
+                onClick={() => toast.warning('Usuário bloqueado')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 text-red-600"
+              >
+                <Ban className="w-4 h-4" /> Bloquear
+              </button>
             </div>
-            <button
-              onClick={() => navigate(`/direct-chat/${activeUser.id}`)}
-              className="mt-6 w-full border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white py-2 rounded-full text-sm font-semibold transition-colors"
-              data-testid="view-full-profile"
-            >
-              Ver perfil completo
-            </button>
           </aside>
         )}
       </div>
