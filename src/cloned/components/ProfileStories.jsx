@@ -317,30 +317,31 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
 
       {/* Live overlay */}
       {live && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-          <div className="flex items-center justify-between p-4 text-white">
+        <div className="fixed inset-0 z-[100] bg-black">
+          {/* Vídeo em tela cheia (estilo TikTok) */}
+          <video
+            ref={liveVideoRef}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay topo */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 text-white bg-gradient-to-b from-black/60 to-transparent">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-red-500 text-xs font-bold rounded uppercase animate-pulse">● AO VIVO</span>
-              <span className="text-sm opacity-80">{viewers} espectadores</span>
+              <span className="text-sm opacity-90">{viewers} espectadores</span>
             </div>
             <button onClick={stopLive} className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-full font-semibold">
               Encerrar
             </button>
           </div>
-          <div className="flex-1 w-full flex items-center justify-center bg-black overflow-hidden">
-            <video
-              ref={liveVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="flex items-center justify-center gap-4 p-6">
-            <button onClick={toggleMic} className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center">
+          {/* Overlay controles inferior */}
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-4 p-6 bg-gradient-to-t from-black/60 to-transparent">
+            <button onClick={toggleMic} className="w-12 h-12 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center">
               {micOn ? <Mic size={22} /> : <MicOff size={22} />}
             </button>
-            <button onClick={toggleCam} className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center">
+            <button onClick={toggleCam} className="w-12 h-12 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center">
               {camOn ? <Video size={22} /> : <VideoOff size={22} />}
             </button>
           </div>

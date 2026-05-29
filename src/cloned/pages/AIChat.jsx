@@ -6,6 +6,8 @@ import BottomNav from '../components/BottomNav';
 import { Send, Bot, User, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AIChat() {
   const { token } = useContext(AuthContext);
@@ -87,20 +89,15 @@ export default function AIChat() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/ai/chat`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          message: input,
-          language: i18n.language 
-        })
+      const history = [...messages, userMessage].map((m) => ({
+        role: m.role === 'ai' ? 'assistant' : m.role,
+        content: m.content,
+      }));
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: { messages: history },
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      if (!error && data?.response) {
         setMessages(prev => [...prev, { role: 'ai', content: data.response }]);
         if (utterance && window.speechSynthesis) {
           utterance.text = data.response || '';
@@ -175,7 +172,13 @@ export default function AIChat() {
               <div className={`max-w-[80%] px-4 py-3 ${
                 msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'
               }`}>
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'ai' ? (
+                  <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                )}
                 {msg.role === 'ai' && (
                   <button
                     type="button"
