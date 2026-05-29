@@ -110,6 +110,7 @@ function App() {
           <Route path="/map" element={user ? <MapPage /> : <Navigate to="/" />} />
           <Route path="/volunteer-register" element={<VolunteerRegisterPage />} />
           <Route path="/assinatura" element={user ? <SubscriptionPage /> : <Navigate to="/" />} />
+          <Route path="/boas-praticas" element={<BoasPraticasPage />} />
         </Routes>
         {user && <PublishFab />}
       </BrowserRouter>
