@@ -405,32 +405,7 @@ export default function SubscriptionPage() {
             </Button>
             </>)}
 
-            {/* Custom PIX key for receiving payments — always visible */}
-            <div className="mt-8 pt-6 border-t border-gray-200" data-testid="custom-pix-section">
-              <label className="block text-sm font-semibold text-gray-900 mb-1">
-                Minha chave PIX (área de pagamento)
-              </label>
-              <p className="text-xs text-gray-500 mb-3">
-                Cole seu PIX Copia e Cola (BR Code) para receber pagamentos dos seus clientes.
-                Se vazio, será usado o PIX padrão da plataforma.
-              </p>
-              <textarea
-                value={customPix}
-                onChange={(e) => setCustomPix(e.target.value)}
-                placeholder="00020126..."
-                rows={3}
-                data-testid="custom-pix-input"
-                className="w-full text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-              />
-              <Button
-                onClick={saveCustomPix}
-                disabled={savingPix || customPix === savedPix}
-                data-testid="save-custom-pix-btn"
-                className="mt-3 bg-orange-500 hover:bg-orange-600 text-white rounded-full h-10 px-6 font-semibold disabled:opacity-50"
-              >
-                {savingPix ? 'Salvando...' : 'Salvar minha chave PIX'}
-              </Button>
-            </div>
+            {/* Seção de chave PIX customizada removida a pedido do usuário */}
           </div>
         </main>
 
