@@ -68,8 +68,8 @@ export const useUserLocation = () => {
     const handler = (e) => setLocation(e.detail);
     window.addEventListener(EVENT, handler);
     if (!current) {
-      // Detecta automaticamente (IP, sem prompt) na primeira montagem global
-      refreshUserLocationAuto({ silent: true });
+      // Detecção automática: tenta GPS (prompt nativo) e cai para IP se negar
+      refreshUserLocationAuto({ forceBrowser: true, silent: true });
     }
     startUserLocationWatch();
     return () => window.removeEventListener(EVENT, handler);
