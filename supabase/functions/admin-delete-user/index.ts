@@ -52,7 +52,21 @@ Deno.serve(async (req) => {
       return json({ error: "Você não pode apagar seu próprio usuário admin" }, 400);
     }
 
+    const { data: conversations, error: conversationsError } = await admin
+      .from("svc_conversations")
+      .select("id")
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`);
+
+    if (conversationsError) return json({ error: conversationsError.message }, 500);
+
+    const conversationIds = (conversations ?? [])
+      .map((conversation) => conversation.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+
     const deleteSteps = [
+      ...(conversationIds.length
+        ? [admin.from("svc_messages").delete().in("conversation_id", conversationIds)]
+        : []),
       admin.from("svc_messages").delete().eq("sender_id", userId),
       admin.from("svc_conversations").delete().or(`user_a.eq.${userId},user_b.eq.${userId}`),
       admin.from("svc_subscriptions").delete().eq("user_id", userId),
