@@ -811,6 +811,8 @@ export default function DirectChatPage() {
                                 {msg.media_type === 'image' ? (
                                   <img src={msg.media[0]} alt="" className="rounded-xl max-w-full max-h-64 cursor-pointer"
                                     onClick={() => window.open(msg.media[0], '_blank')} />
+                                ) : msg.media_type === 'audio' ? (
+                                  <audio src={msg.media[0]} controls className="max-w-full" />
                                 ) : (
                                   <video src={msg.media[0]} controls className="rounded-xl max-w-full max-h-64" />
                                 )}
