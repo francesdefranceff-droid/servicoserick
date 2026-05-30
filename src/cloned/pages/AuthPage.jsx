@@ -316,38 +316,42 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Lado Esquerdo - Imagem de Fundo */}
+    <div className="min-h-screen flex bg-background">
+      {/* Lado Esquerdo - Página da área escolhida */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Imagem de trabalho em Jataí */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-          style={{ backgroundImage: `url(${jataiWorkImage})` }}
+        <img
+          src={flow.image || jataiWorkImage}
+          alt={`${flow.label} na rede voluntária PertoDeMimServicos`}
+          width={1280}
+          height={896}
+          className="absolute inset-0 h-full w-full object-cover transition-all duration-700"
         />
-        {/* Overlay verde Goiás → âmbar */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/75 via-primary/50 to-secondary/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-foreground/80 via-foreground/35 to-primary/55" />
 
-        {/* Conteúdo sobre a imagem */}
-        <div className="relative z-10 flex flex-col justify-center items-center text-primary-foreground p-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">
-            {role === 'helper' ? 'Ofereça Trabalho' : 'Encontre Trabalho em Jataí'}
+        <div className="relative z-10 flex flex-col justify-end text-primary-foreground p-12 pb-16">
+          <div className="inline-flex w-fit items-center gap-2 bg-background/15 backdrop-blur-md rounded-full px-4 py-2 border border-background/25 mb-6">
+            <FlowIcon className="w-5 h-5" />
+            <span className="text-sm font-semibold">{flow.label}</span>
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-bold mb-4 max-w-xl leading-tight">
+            {flow.title}
           </h1>
-          <p className="text-xl text-primary-foreground/90 max-w-md">
-            {role === 'helper'
-              ? 'Conecte-se com profissionais qualificados da região de Goiás e impulsione seu negócio.'
-              : 'Acesse vagas, demandas e oportunidades de trabalho em Jataí e região do Cerrado.'}
+          <p className="text-lg text-primary-foreground/90 max-w-lg leading-relaxed">
+            {flow.subtitle}
           </p>
-          <div className="mt-8 flex items-center gap-4">
-            <div className="bg-background/20 backdrop-blur-sm rounded-full px-6 py-3 border border-background/30">
-              <span className="text-lg font-semibold">+500 oportunidades em Jataí</span>
-            </div>
+          <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg">
+            {['Região primeiro', 'Contexto voluntário', 'Conexões reais'].map((item) => (
+              <div key={item} className="bg-background/15 backdrop-blur-md rounded-2xl px-4 py-3 border border-background/20 text-sm font-semibold">
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
 
-      {/* Lado Direito - Formulário */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 gradient-bg">
+      {/* Lado Direito - Página de entrada */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 gradient-bg">
         <button
           onClick={goBack}
           className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/50 transition-all lg:left-auto lg:right-6"
@@ -356,7 +360,16 @@ export default function AuthPage() {
           <ArrowLeft size={24} />
         </button>
 
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-card p-8 animate-fade-in" data-testid="auth-form">
+        <div className="w-full max-w-md bg-card rounded-3xl shadow-card overflow-hidden animate-fade-in" data-testid="auth-form">
+        <div className="lg:hidden relative h-40 overflow-hidden">
+          <img src={flow.image || jataiWorkImage} alt={`${flow.label} na comunidade`} width={1280} height={896} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/65 to-transparent" />
+          <div className="absolute bottom-4 left-5 right-5 text-primary-foreground">
+            <p className="text-xs font-semibold mb-1">{flow.label}</p>
+            <h1 className="text-xl font-bold leading-tight">{flow.title}</h1>
+          </div>
+        </div>
+        <div className="p-6 sm:p-8">
         {/* Step indicator for registration */}
         {!isLogin && (role === 'migrant' || role === 'helper') && (
           <div className="flex justify-center mb-6">
