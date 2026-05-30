@@ -457,6 +457,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_svc_category: { Args: { _name: string }; Returns: string }
       get_my_phone: { Args: never; Returns: string }
       get_my_svc_profile: {
         Args: never
