@@ -196,25 +196,26 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Se é cadastro de migrante ou helper e está na etapa 1, vai para etapa 2
-    if (!isLogin && (role === 'migrant' || role === 'helper') && step === 1) {
+    // Se é cadastro por área e está na etapa 1, vai para categorias/localização
+    if (!isLogin && categoryRoles.includes(role) && step === 1) {
       setStep(2);
       return;
     }
     
-    // Se é helper e está na etapa 2, vai para etapa 3 (localização)
-    if (!isLogin && role === 'helper' && step === 2) {
-      if (selectedCategories.length === 0) {
-        toast.error('Selecione pelo menos uma categoria que você quer ajudar');
-        return;
-      }
+    if (!isLogin && categoryRoles.includes(role) && step === 2 && selectedCategories.length === 0) {
+      toast.error(role === 'helper' ? 'Selecione pelo menos uma categoria que você quer oferecer' : 'Selecione pelo menos uma categoria');
+      return;
+    }
+
+    // Se é helper ou precisa de ajuda, etapa final pede região para conectar pessoas próximas
+    if (!isLogin && (role === 'helper' || role === 'needs_help') && step === 2) {
       setStep(3);
       return;
     }
     
     // Validação para migrantes
-    if (!isLogin && role === 'migrant' && selectedCategories.length === 0) {
-      toast.error('Selecione pelo menos uma categoria de ajuda que você precisa');
+    if (!isLogin && categoryRoles.includes(role) && selectedCategories.length === 0) {
+      toast.error('Selecione pelo menos uma categoria antes de continuar');
       return;
     }
 
@@ -289,25 +290,27 @@ export default function AuthPage() {
   };
 
   const getStepTitle = () => {
-    if (isLogin) return t('login');
+    if (isLogin) return 'Entrar na sua área';
     if (step === 1) return t('register');
     if (step === 2) {
-      if (role === 'migrant') return 'O que você precisa?';
-      if (role === 'helper') return 'Como você quer ajudar?';
+      if (role === 'migrant') return 'Que serviço você procura?';
+      if (role === 'helper') return 'Que serviços você oferece?';
+      if (role === 'needs_help') return 'Que ajuda você precisa?';
     }
-    if (step === 3 && role === 'helper') return 'Sua Localização';
+    if (step === 3 && (role === 'helper' || role === 'needs_help')) return 'Sua região';
     return t('register');
   };
 
   const getStepSubtitle = () => {
-    if (step === 2 && role === 'migrant') return 'Selecione as áreas em que você precisa de ajuda';
-    if (step === 2 && role === 'helper') return 'Selecione as áreas em que você pode oferecer ajuda';
-    if (step === 3 && role === 'helper') return 'Compartilhe sua localização para ajudar pessoas próximas';
+    if (step === 2 && role === 'migrant') return 'Selecione as áreas em que você quer encontrar profissionais ou apoio';
+    if (step === 2 && role === 'helper') return 'Selecione as áreas em que você pode atender pessoas da sua região';
+    if (step === 2 && role === 'needs_help') return 'Selecione as áreas de apoio voluntário que você precisa';
+    if (step === 3 && (role === 'helper' || role === 'needs_help')) return 'Informe sua região para aproximar conexões reais';
     return null;
   };
 
   const getTotalSteps = () => {
-    if (role === 'helper') return 3;
+    if (role === 'helper' || role === 'needs_help') return 3;
     if (role === 'migrant') return 2;
     return 1;
   };
