@@ -457,6 +457,24 @@ export default function AuthPage() {
 
               {!isLogin && (
                 <div>
+                  <Label htmlFor="region">Sua região</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="region"
+                      value={locationAddress}
+                      onChange={(e) => setLocationAddress(e.target.value)}
+                      placeholder="Cidade, estado ou país"
+                      className="rounded-xl"
+                    />
+                    <Button type="button" variant="outline" onClick={getLocation} disabled={loadingLocation} className="rounded-xl shrink-0">
+                      {loadingLocation ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!isLogin && (
+                <div>
                   <Label>Escolha sua área</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     {Object.values(FLOW_CONFIG).map((option) => {
@@ -612,7 +630,7 @@ export default function AuthPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-textPrimary">Localização</h3>
-                    <p className="text-sm text-textSecondary">Ajude pessoas próximas de você</p>
+                    <p className="text-sm text-muted-foreground">{role === 'needs_help' ? 'Encontre apoio próximo de você' : 'Ajude pessoas próximas de você'}</p>
                   </div>
                 </div>
 
@@ -643,7 +661,7 @@ export default function AuthPage() {
                         Localização obtida!
                       </p>
                       {locationAddress && (
-                        <p className="text-green-700 text-xs mt-1 line-clamp-2">{locationAddress}</p>
+                        <p className="text-primary text-xs mt-1 line-clamp-2">{locationAddress}</p>
                       )}
                     </div>
                     <Button
