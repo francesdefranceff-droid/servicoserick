@@ -23,6 +23,8 @@ import ServicosAdmin from "./pages/servicos/Admin";
 import { ClonedAuthProvider, clonedRoutes } from "./cloned/ClonedRoutes";
 import { AuthContext as ClonedAuthContext } from "./cloned/ClonedAuthContext";
 import IncomingCallListener from "./cloned/components/IncomingCallListener";
+import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
+import { DebugErrorThrower } from "./components/DebugErrorThrower";
 
 const AppRoutes = () => {
   const { user } = useContext(ClonedAuthContext) as { user: { role?: string } | null };
