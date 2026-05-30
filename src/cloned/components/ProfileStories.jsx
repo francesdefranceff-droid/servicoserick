@@ -111,6 +111,31 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
     e.target.value = '';
   };
 
+  const announceLive = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('live_streams').upsert({
+        user_id: user.id,
+        display_name: userName || user.email?.split('@')[0] || 'Usuário',
+        avatar_url: avatarSrc || null,
+        started_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn('Falha ao anunciar live:', e);
+    }
+  };
+
+  const endLiveAnnouncement = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('live_streams').delete().eq('user_id', user.id);
+    } catch (e) {
+      console.warn('Falha ao encerrar live:', e);
+    }
+  };
+
   const startLive = async () => {
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -132,6 +157,7 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
       setMicOn(stream.getAudioTracks().some((track) => track.enabled));
       setLive(true);
       setViewers(1);
+      announceLive();
     } catch (err) {
       alert('Não foi possível acessar câmera/microfone: ' + err.message);
     }
@@ -142,7 +168,18 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
     liveStreamRef.current = null;
     setLive(false);
     setViewers(0);
+    endLiveAnnouncement();
   };
+
+  // Garante encerramento ao fechar a aba
+  useEffect(() => {
+    const handler = () => { if (live) endLiveAnnouncement(); };
+    window.addEventListener('beforeunload', handler);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+      if (live) endLiveAnnouncement();
+    };
+  }, [live]);
 
   const toggleCam = () => {
     const track = liveStreamRef.current?.getVideoTracks()[0];
