@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * DebugErrorThrower
@@ -12,19 +12,21 @@ import { useEffect } from "react";
  * tratamento — o throw síncrono no render é o que aciona o overlay nativo.
  */
 export const DebugErrorThrower = () => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
       if (typeof detail !== "string" || detail.length === 0) return;
-      // Lança de forma assíncrona para virar "uncaught error" e acionar
-      // o overlay nativo "Try to Fix" SEM quebrar o render da árvore React.
-      setTimeout(() => {
-        throw new Error(detail);
-      }, 0);
+      setErrorMessage(detail);
     };
     window.addEventListener("lovable-debug-error", handler as EventListener);
     return () => window.removeEventListener("lovable-debug-error", handler as EventListener);
   }, []);
+
+  if (errorMessage) {
+    throw new Error(errorMessage);
+  }
 
   return null;
 };
