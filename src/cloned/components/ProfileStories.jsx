@@ -200,6 +200,9 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
 
   return (
     <div className="relative py-2 overflow-visible">
+      {/* Indicador global: quem está ao vivo agora (visível a todos) */}
+      <LiveIndicators />
+
       <div className="mb-3 flex flex-wrap items-center gap-2 overflow-visible">
         <button
           type="button"
