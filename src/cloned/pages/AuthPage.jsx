@@ -73,13 +73,14 @@ const professionalAreas = [
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get('role');
+  const modeFromUrl = searchParams.get('mode');
   const nextPath = searchParams.get('next');
   
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(!(modeFromUrl === 'register' || modeFromUrl === 'signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState(roleFromUrl || 'migrant');
+  const [role, setRole] = useState(FLOW_CONFIG[roleFromUrl] ? roleFromUrl : 'migrant');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   
@@ -102,6 +103,9 @@ export default function AuthPage() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const flow = FLOW_CONFIG[role] || FLOW_CONFIG.migrant;
+  const FlowIcon = flow.icon;
+  const categoryRoles = ['migrant', 'helper', 'needs_help'];
 
   const getPostAuthPath = () => {
     if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
