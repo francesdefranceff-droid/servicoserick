@@ -871,43 +871,79 @@ export default function DirectChatPage() {
               <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileUpload(e, 'image')} className="hidden" />
 
               <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 border border-gray-200">
-                <button
-                  data-testid="toggle-media-button"
-                  onClick={() => setShowMediaOptions(!showMediaOptions)}
-                  className="p-2 hover:bg-gray-200 rounded-full transition"
-                  title="Anexar"
-                >
-                  <Paperclip size={18} className="text-gray-500" />
-                </button>
-                <button
-                  data-testid="open-camera"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="p-2 hover:bg-gray-200 rounded-full transition"
-                  title="Câmera"
-                >
-                  <Camera size={18} className="text-gray-500" />
-                </button>
-                <Textarea
-                  data-testid="message-input"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Sua mensagem"
-                  rows={1}
-                  className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[24px] max-h-32 py-1 text-sm shadow-none"
-                />
-                <button
-                  data-testid="send-message-button"
-                  onClick={() => sendMessage()}
-                  disabled={sending || !input.trim()}
-                  className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-40 text-white transition"
-                >
-                  {sending ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Send size={16} />
-                  )}
-                </button>
+                {isRecording ? (
+                  <>
+                    <button
+                      onClick={() => stopRecording(true)}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Cancelar"
+                    >
+                      <XIcon size={18} className="text-gray-500" />
+                    </button>
+                    <div className="flex-1 flex items-center gap-2 text-sm text-red-600 font-medium">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                      Gravando… {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')}
+                    </div>
+                    <button
+                      onClick={() => stopRecording(false)}
+                      className="w-9 h-9 grid place-items-center rounded-full bg-red-500 hover:bg-red-600 text-white transition"
+                      title="Enviar áudio"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      data-testid="toggle-media-button"
+                      onClick={() => setShowMediaOptions(!showMediaOptions)}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Anexar"
+                    >
+                      <Paperclip size={18} className="text-gray-500" />
+                    </button>
+                    <button
+                      data-testid="open-camera"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Câmera"
+                    >
+                      <Camera size={18} className="text-gray-500" />
+                    </button>
+                    <Textarea
+                      data-testid="message-input"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Sua mensagem"
+                      rows={1}
+                      className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[24px] max-h-32 py-1 text-sm shadow-none"
+                    />
+                    {input.trim() ? (
+                      <button
+                        data-testid="send-message-button"
+                        onClick={() => sendMessage()}
+                        disabled={sending}
+                        className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-40 text-white transition"
+                      >
+                        {sending ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send size={16} />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        data-testid="record-voice-button"
+                        onClick={startRecording}
+                        className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white transition"
+                        title="Gravar áudio"
+                      >
+                        <Mic size={16} />
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}
