@@ -6,6 +6,8 @@ import { MapPin, Filter, Phone, Clock, ExternalLink, Navigation, Info, Target, L
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useUserLocation } from '../lib/userLocation';
+import { requestLocationPermission } from '../utils/geolocation';
 
 const BACKEND_URL = import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || "";
 
@@ -17,6 +19,7 @@ const isNightTime = () => {
 
 export default function MapPage() {
   const { token } = useContext(AuthContext);
+  const { location: sharedLocation, setManualLocation } = useUserLocation();
   const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedService, setSelectedService] = useState(null);
@@ -134,59 +137,26 @@ export default function MapPage() {
   };
 
   // Obter localização do usuário
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Seu navegador não suporta geolocalização');
-      return;
-    }
-
+  const getUserLocation = async () => {
     setLoadingLocation(true);
-    
     toast.info('📍 Obtendo sua localização...', {
       description: 'Por favor, permita o acesso à localização quando solicitado',
       duration: 4000
     });
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setLoadingLocation(false);
-        toast.success('✅ Localização obtida!', {
-          description: 'Agora você pode ver locais de ajuda próximos a você'
-        });
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setLoadingLocation(false);
-        
-        let errorMessage = 'Erro ao obter localização';
-        let errorDescription = '';
-
-        if (error.code === 1) {
-          errorMessage = '🔒 Permissão de localização negada';
-          errorDescription = 'Ative a permissão de localização nas configurações do navegador para ver locais próximos.';
-        } else if (error.code === 2) {
-          errorMessage = '📡 Localização indisponível';
-          errorDescription = 'Não foi possível obter sua localização. Verifique se o GPS está ativado.';
-        } else if (error.code === 3) {
-          errorMessage = '⏱️ Tempo esgotado';
-          errorDescription = 'A solicitação demorou muito. Tente novamente.';
-        }
-
-        toast.error(errorMessage, {
-          description: errorDescription,
-          duration: 6000
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
-      }
-    );
+    const loc = await requestLocationPermission({ forceBrowser: true, showToast: true });
+    setLoadingLocation(false);
+    if (loc) {
+      setUserLocation({ lat: loc.lat, lng: loc.lng });
+      setManualLocation(loc);
+      toast.success('✅ Localização obtida!', {
+        description: 'Agora você pode ver locais de ajuda próximos a você'
+      });
+    } else {
+      toast.error('Não foi possível detectar a localização', {
+        description: 'Digite sua localização manualmente no aviso do site para atualizar os mapas.',
+        duration: 6000
+      });
+    }
   };
 
   useEffect(() => {
@@ -197,9 +167,22 @@ export default function MapPage() {
     fetchLocations();
   }, [fetchLocations]);
 
-  // Tentar obter localização ao carregar a página
   useEffect(() => {
-    getUserLocation();
+    if (sharedLocation?.lat && sharedLocation?.lng) {
+      setUserLocation({ lat: Number(sharedLocation.lat), lng: Number(sharedLocation.lng) });
+    }
+  }, [sharedLocation?.lat, sharedLocation?.lng]);
+
+  // Tentar obter localização aproximada ao carregar a página, sem bloquear o usuário
+  useEffect(() => {
+    if (!sharedLocation) {
+      requestLocationPermission({ showToast: false }).then((loc) => {
+        if (loc) {
+          setManualLocation(loc);
+          setUserLocation({ lat: loc.lat, lng: loc.lng });
+        }
+      });
+    }
   }, []);
 
   const openGoogleMaps = (service) => {

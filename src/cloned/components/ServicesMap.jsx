@@ -6,6 +6,7 @@ import { MapPin, Loader2, ExternalLink } from 'lucide-react';
 import { modernMapStyle, pinIcon, dotIcon, jobPinIcon } from './mapStyle';
 import { getGoogleMapsBrowserKey, getGoogleMapsChannel, MapFallback } from './googleMapsConfig';
 import { createPlatformSearchJobs, getPrimarySearchTerm, readLastJobSearch } from '../lib/jobSearchBridge';
+import { useUserLocation } from '../lib/userLocation';
 
 /**
  * Mapa com:
@@ -57,6 +58,7 @@ const buildSearchJobMarkers = ({ userId, categories, userLocation, requests, ena
 
 export default function ServicesMap({ height = 400, showHelpRequests = true, postTypeFilter = 'needs', categories = EMPTY_CATEGORIES, radiusKm = 0, userLocation = null, userId = null, showSearchJobs = true }) {
   const navigate = useNavigate();
+  const { location: sharedLocation } = useUserLocation();
   const apiKey = getGoogleMapsBrowserKey();
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
@@ -67,10 +69,14 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
   const [helpers, setHelpers] = useState([]);
   const [requests, setRequests] = useState([]);
   const [searchJobs, setSearchJobs] = useState([]);
-  const [userLoc, setUserLoc] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [map, setMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const categoriesKey = (categories || []).filter(Boolean).join('|');
+  const activeUserLocation = useMemo(() => {
+    const loc = hasCoords(userLocation) ? userLocation : sharedLocation;
+    return hasCoords(loc) ? { lat: Number(loc.lat), lng: Number(loc.lng), address: loc.address } : null;
+  }, [userLocation?.lat, userLocation?.lng, userLocation?.address, sharedLocation?.lat, sharedLocation?.lng, sharedLocation?.address]);
 
   useEffect(() => {
     (async () => {
@@ -101,7 +107,7 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
       const selectedCategories = (categories || []).filter(Boolean);
       const filteredRequests = (reqRes.data || []).filter((request) => {
         if (selectedCategories.length && !selectedCategories.includes(request.category_slug)) return false;
-        const distance = distanceKm(userLocation, request);
+        const distance = distanceKm(activeUserLocation, request);
         if (distance != null && radiusKm > 0) return distance <= radiusKm;
         return true;
       });
@@ -109,28 +115,27 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
       setSearchJobs(buildSearchJobMarkers({
         userId,
         categories: selectedCategories,
-        userLocation,
+        userLocation: activeUserLocation,
         requests: filteredRequests,
         enabled: showSearchJobs && postTypeFilter === 'offers',
       }));
       setLoading(false);
     })();
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => setUserLoc({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        () => {}
-      );
-    }
-  }, [showHelpRequests, postTypeFilter, categoriesKey, radiusKm, userLocation?.lat, userLocation?.lng, userId, showSearchJobs]);
+  }, [showHelpRequests, postTypeFilter, categoriesKey, radiusKm, activeUserLocation?.lat, activeUserLocation?.lng, userId, showSearchJobs]);
 
   const center = useMemo(() => {
-    if (userLoc) return userLoc;
+    if (activeUserLocation) return activeUserLocation;
     if (searchJobs[0]?.lat) return { lat: searchJobs[0].lat, lng: searchJobs[0].lng };
     if (helpers[0]?.lat) return { lat: helpers[0].lat, lng: helpers[0].lng };
     if (requests[0]?.lat) return { lat: requests[0].lat, lng: requests[0].lng };
     return { lat: 48.8566, lng: 2.3522 };
-  }, [userLoc, searchJobs, helpers, requests]);
+  }, [activeUserLocation, searchJobs, helpers, requests]);
+
+  useEffect(() => {
+    if (map && center?.lat && center?.lng) {
+      map.panTo(center);
+    }
+  }, [map, center?.lat, center?.lng]);
 
   if (!apiKey || loadError) {
     return <MapFallback height={height} />;
@@ -148,6 +153,8 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
           mapContainerStyle={{ width: '100%', height: '100%' }}
           center={center}
           zoom={12}
+          onLoad={setMap}
+          onUnmount={() => setMap(null)}
           options={{
             styles: modernMapStyle,
             disableDefaultUI: true,
@@ -157,8 +164,8 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
             backgroundColor: '#f5f5f7',
           }}
         >
-          {userLoc && (
-            <Marker position={userLoc} icon={{ url: dotIcon('#3b82f6') }} title="Você" />
+          {activeUserLocation && (
+            <Marker position={activeUserLocation} icon={{ url: dotIcon('#3b82f6') }} title={activeUserLocation.address || 'Você'} />
           )}
 
           {helpers.map((h) => (
@@ -259,7 +266,7 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
         {searchJobs.length > 0 && (
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-600 ring-2 ring-blue-100 animate-pulse" /> Vagas buscadas</span>
         )}
-        {userLoc && (
+        {activeUserLocation && (
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-100" /> Você</span>
         )}
       </div>

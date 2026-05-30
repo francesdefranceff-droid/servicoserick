@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -43,6 +43,13 @@ const GoogleMapComponent = ({ locations, userLocation, onClose }) => {
   const onUnmount = React.useCallback(function callback(map) {
     setMap(null);
   }, []);
+
+  useEffect(() => {
+    if (map && userLocation?.lat && userLocation?.lng) {
+      map.panTo(userLocation);
+      map.setZoom(13);
+    }
+  }, [map, userLocation?.lat, userLocation?.lng]);
 
   if (!apiKey || loadError) {
     return <MapFallback height={400} />;

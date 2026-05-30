@@ -11,6 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import ServicesMap from '../components/ServicesMap';
 import NearbyHelpPlaces from '../components/NearbyHelpPlaces';
+import { useUserLocation } from '../lib/userLocation';
+import { requestLocationPermission } from '../utils/geolocation';
 
 // Imagens de pessoas felizes sendo ajudadas
 const HERO_IMAGES = [
@@ -43,6 +45,7 @@ const ALL_CATEGORIES = [
 
 export default function VolunteersPage() {
   const { token, user } = useContext(AuthContext);
+  const { location: sharedLocation, setManualLocation } = useUserLocation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [showModal, setShowModal] = useState(true);
@@ -140,27 +143,23 @@ export default function VolunteersPage() {
     setPublicOffer({...publicOffer, images: newImages});
   };
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      toast.info('Obtendo localização...');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setPublicOffer({
-            ...publicOffer,
-            location: {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              address: 'Localização atual'
-            }
-          });
-          toast.success('Localização adicionada!');
-        },
-        (error) => {
-          toast.error('Erro ao obter localização. Tente novamente.');
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
+  const getLocation = async () => {
+    toast.info('Obtendo localização...');
+    const loc = await requestLocationPermission({ forceBrowser: true, showToast: true });
+    if (!loc) {
+      toast.error('Erro ao obter localização. Tente novamente.');
+      return;
     }
+    setPublicOffer({
+      ...publicOffer,
+      location: {
+        lat: loc.lat,
+        lng: loc.lng,
+        address: loc.address || 'Localização atual'
+      }
+    });
+    setManualLocation(loc);
+    toast.success('Localização adicionada!');
   };
 
   const submitPublicOffer = async () => {
@@ -548,7 +547,7 @@ export default function VolunteersPage() {
             <MapPin size={18} className="text-primary" />
             Mapa: voluntários e pessoas que precisam de ajuda
           </h3>
-          <ServicesMap height={380} showHelpRequests={true} />
+          <ServicesMap height={380} showHelpRequests={true} userLocation={sharedLocation} />
         </div>
 
         {/* Locais de ajuda próximos (alimentação, doações) */}
