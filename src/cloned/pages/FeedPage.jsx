@@ -402,25 +402,58 @@ export default function FeedPage() {
   const [postCoords, setPostCoords] = useState(null); // {lat, lng}
   const [detectingAddress, setDetectingAddress] = useState(false);
 
-  const detectAddress = React.useCallback(() => {
-    if (!navigator.geolocation) return;
+  const detectAddress = React.useCallback(async () => {
     setDetectingAddress(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setPostCoords({ lat: latitude, lng: longitude });
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-          const d = await r.json();
-          setPostAddress(d.display_name || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-        } catch {
-          setPostAddress(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-        }
+    const finish = async (lat, lng) => {
+      setPostCoords({ lat, lng });
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+          headers: { 'Accept-Language': 'pt-BR,pt,en' },
+        });
+        const d = await r.json();
+        setPostAddress(d.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      } catch {
+        setPostAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      }
+      setDetectingAddress(false);
+    };
+
+    // 1) Tenta GPS do navegador (mais preciso)
+    if (navigator.geolocation) {
+      try {
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => { finish(pos.coords.latitude, pos.coords.longitude); resolve(); },
+            async (err) => {
+              console.warn('GPS falhou, tentando IP:', err?.message);
+              // 2) Fallback via IP
+              try {
+                const { getIpLocation } = await import('../utils/geolocation');
+                const ip = await getIpLocation();
+                if (ip?.lat && ip?.lng) {
+                  await finish(ip.lat, ip.lng);
+                  toast.info('Localização aproximada (via IP). Ajuste manualmente se necessário.');
+                } else {
+                  toast.error('Não foi possível detectar a localização. Digite o endereço manualmente.');
+                  setDetectingAddress(false);
+                }
+              } catch {
+                toast.error('Não foi possível detectar a localização.');
+                setDetectingAddress(false);
+              }
+              resolve();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+          );
+        });
+      } catch (e) {
         setDetectingAddress(false);
-      },
-      () => setDetectingAddress(false),
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
+        toast.error('Erro ao detectar localização.');
+      }
+    } else {
+      toast.error('Geolocalização não suportada neste navegador.');
+      setDetectingAddress(false);
+    }
   }, []);
 
   const [postBudget, setPostBudget] = useState('Sob orçamento');

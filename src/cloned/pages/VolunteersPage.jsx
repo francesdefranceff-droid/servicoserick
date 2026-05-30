@@ -10,6 +10,7 @@ import { MessageCircle, Plus, Check, Heart, Users, Sparkles, MapPin, Image as Im
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import ServicesMap from '../components/ServicesMap';
+import NearbyHelpPlaces from '../components/NearbyHelpPlaces';
 
 // Imagens de pessoas felizes sendo ajudadas
 const HERO_IMAGES = [
@@ -549,6 +550,9 @@ export default function VolunteersPage() {
           </h3>
           <ServicesMap height={380} showHelpRequests={true} />
         </div>
+
+        {/* Locais de ajuda próximos (alimentação, doações) */}
+        <NearbyHelpPlaces />
 
         {/* Cards de inspiração */}
         <div className="grid grid-cols-2 gap-4 mb-6">
