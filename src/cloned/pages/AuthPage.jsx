@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getOrCreateSvcProfile, normalizeAuthUser } from '../lib/authProfile';
-import jataiWorkImage from '@/assets/jatai-work.jpg';
+import jataiWorkImage from '@/assets/auth-volunteers-hero.jpg';
 import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, slugifyCategoryName } from '../lib/serviceCategories';
 
 const HELP_CATEGORIES = WORK_SERVICE_CATEGORIES;

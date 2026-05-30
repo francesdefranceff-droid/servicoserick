@@ -6,7 +6,7 @@ import { Search, Briefcase, MapPin, Star } from 'lucide-react';
 import i18n from '../i18n';
 import AuthModal from '../components/AuthModal';
 import CountryMonuments from '@/components/CountryMonuments';
-import heroImg from '@/assets/monument-brasil.jpg';
+import heroImg from '@/assets/landing-community-hero.jpg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
