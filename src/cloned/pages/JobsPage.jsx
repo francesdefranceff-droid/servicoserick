@@ -778,19 +778,24 @@ export default function JobsPage() {
                           
                           <p className="text-sm text-gray-600 mt-1">{job.company}</p>
                           
-                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
                               <MapPin size={12} />
-                              {job.location || 'Brasil'}
+                              {job.location || locationQuery || 'Brasil'}
                             </span>
+                            {job.source && (
+                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                {job.source}
+                              </span>
+                            )}
                             {job.posted && (
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1 text-gray-500">
                                 <Clock size={12} />
                                 {job.posted}
                               </span>
                             )}
                             {(job.type || job.employment_type) && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded-full">
+                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
                                 {job.type || job.employment_type}
                               </span>
                             )}
