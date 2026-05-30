@@ -154,6 +154,64 @@ export default function HomePage() {
   const [newComment, setNewComment] = useState('');
   const [commentingOn, setCommentingOn] = useState(null);
   const [advertisements, setAdvertisements] = useState([]);
+  const [regionInput, setRegionInput] = useState('');
+  const [savingRegion, setSavingRegion] = useState(false);
+
+  const handleSaveRegion = async (e) => {
+    e?.preventDefault?.();
+    const value = regionInput.trim();
+    if (!value) {
+      toast.error('Digite sua cidade ou região');
+      return;
+    }
+    if (!user?.id) return;
+    try {
+      setSavingRegion(true);
+      await updateSvcProfile(user.id, { city: value });
+      await refreshUser?.();
+      toast.success(`Região definida: ${value}`);
+      setRegionInput('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Não foi possível salvar sua região');
+    } finally {
+      setSavingRegion(false);
+    }
+  };
+
+  const detectMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocalização não suportada');
+      return;
+    }
+    setSavingRegion(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const { latitude, longitude } = pos.coords;
+        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=pt`);
+        const data = await resp.json();
+        const a = data?.address || {};
+        const cityName = a.city || a.town || a.village || a.municipality || a.county || '';
+        const country = a.country || '';
+        const value = [cityName, country].filter(Boolean).join(', ');
+        if (!value) throw new Error('sem cidade');
+        if (user?.id) {
+          await updateSvcProfile(user.id, { city: value, lat: latitude, lng: longitude });
+          await refreshUser?.();
+        }
+        toast.success(`Localização: ${value}`);
+      } catch (err) {
+        console.error(err);
+        toast.error('Não foi possível detectar sua cidade');
+      } finally {
+        setSavingRegion(false);
+      }
+    }, () => {
+      toast.error('Permissão de localização negada');
+      setSavingRegion(false);
+    });
+  };
+
 
   const categories = [
     { value: 'food', label: t('food'), color: 'bg-green-100 text-green-700 border-green-200', icon: Utensils },
