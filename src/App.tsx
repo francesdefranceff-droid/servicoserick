@@ -63,6 +63,7 @@ const App = () => (
       <Sonner />
       <IncomingCallListener />
       <AppRoutes />
+      <LocationBanner />
       <ErrorDebugPopup />
     </ClonedAuthProvider>
   </TooltipProvider>
