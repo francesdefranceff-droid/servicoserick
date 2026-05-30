@@ -382,7 +382,7 @@ export default function AuthPage() {
         </div>
         <div className="p-6 sm:p-8">
         {/* Step indicator for registration */}
-        {!isLogin && (role === 'migrant' || role === 'helper') && (
+        {!isLogin && categoryRoles.includes(role) && (
           <div className="flex justify-center mb-6">
             <div className="flex items-center gap-2">
               {[...Array(getTotalSteps())].map((_, idx) => (
@@ -457,34 +457,28 @@ export default function AuthPage() {
 
               {!isLogin && (
                 <div>
-                  <Label>Você é</Label>
+                  <Label>Escolha sua área</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
-                    <button
-                      type="button"
-                      data-testid="role-migrant"
-                      onClick={() => { setRole('migrant'); setSelectedCategories([]); }}
-                      className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
-                        role === 'migrant'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <User size={24} />
-                      <span>Procuro serviço</span>
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="role-helper"
-                      onClick={() => { setRole('helper'); setSelectedCategories([]); }}
-                      className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
-                        role === 'helper'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <Heart size={24} />
-                      <span>Ofereço serviço</span>
-                    </button>
+                    {Object.values(FLOW_CONFIG).map((option) => {
+                      const OptionIcon = option.icon;
+                      const selected = role === option.role;
+                      return (
+                        <button
+                          key={option.role}
+                          type="button"
+                          data-testid={`role-${option.role}`}
+                          onClick={() => { setRole(option.role); setSelectedCategories([]); setStep(1); }}
+                          className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
+                            selected
+                              ? 'bg-primary text-primary-foreground shadow-lg'
+                              : 'bg-muted text-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          <OptionIcon size={24} />
+                          <span>{option.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -547,7 +541,7 @@ export default function AuthPage() {
           )}
 
           {/* Step 2: Categories (for migrants and helpers) */}
-          {!isLogin && step === 2 && (role === 'migrant' || role === 'helper') && (
+          {!isLogin && step === 2 && categoryRoles.includes(role) && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {HELP_CATEGORIES.map(cat => {
@@ -609,7 +603,7 @@ export default function AuthPage() {
           )}
 
           {/* Step 3: Location (for helpers only) */}
-          {!isLogin && step === 3 && role === 'helper' && (
+          {!isLogin && step === 3 && (role === 'helper' || role === 'needs_help') && (
             <div className="space-y-4">
               <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
                 <div className="flex items-center gap-3 mb-4">
