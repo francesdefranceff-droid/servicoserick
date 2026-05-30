@@ -371,7 +371,7 @@ export default function AuthPage() {
           <ArrowLeft size={24} />
         </button>
 
-        <div className="w-full max-w-md bg-card rounded-3xl shadow-card overflow-hidden animate-fade-in" data-testid="auth-form">
+        <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl overflow-hidden animate-fade-in" data-testid="auth-form">
         <div className="lg:hidden relative h-40 overflow-hidden">
           <img src={flow.image || jataiWorkImage} alt={`${flow.label} na comunidade`} width={1280} height={896} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/65 to-transparent" />
@@ -401,12 +401,12 @@ export default function AuthPage() {
           </div>
         )}
 
-        <h2 className="text-3xl font-heading font-bold text-textPrimary mb-2 text-center">
+        <h2 className="text-3xl font-heading font-bold text-foreground mb-2 text-center">
           {getStepTitle()}
         </h2>
         
         {getStepSubtitle() && (
-          <p className="text-center text-textSecondary mb-6">
+          <p className="text-center text-muted-foreground mb-6">
             {getStepSubtitle()}
           </p>
         )}
@@ -502,7 +502,7 @@ export default function AuthPage() {
               )}
 
               {!isLogin && role === 'volunteer' && (
-                <div className="space-y-4 p-4 bg-blue-50 rounded-xl border-2 border-primary/20">
+                <div className="space-y-4 p-4 bg-primary/10 rounded-xl border-2 border-primary/20">
                   <h3 className="font-bold text-primary flex items-center gap-2">
                     <Shield size={20} />
                     Informações Profissionais
@@ -581,10 +581,10 @@ export default function AuthPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{cat.icon}</span>
                       <div>
-                        <div className={`text-sm font-bold ${selected ? 'text-white' : 'text-textPrimary'}`}>
+                        <div className={`text-sm font-bold ${selected ? 'text-white' : 'text-foreground'}`}>
                           {cat.label}
                         </div>
-                        <div className={`text-xs ${selected ? 'text-white/80' : 'text-textSecondary'}`}>
+                        <div className={`text-xs ${selected ? 'text-white/80' : 'text-muted-foreground'}`}>
                           {cat.desc}
                         </div>
                       </div>
@@ -606,11 +606,11 @@ export default function AuthPage() {
               {selectedCategories.length > 0 && (
                 <div className={`p-3 rounded-xl border ${
                   role === 'migrant' 
-                    ? 'bg-green-100 border-green-300' 
+                    ? 'bg-primary/10 border-primary/30' 
                     : 'bg-primary/10 border-primary/30'
                 }`}>
                   <p className={`text-sm font-medium flex items-center gap-2 ${
-                    role === 'migrant' ? 'text-green-800' : 'text-primary'
+                    role === 'migrant' ? 'text-primary' : 'text-primary'
                   }`}>
                     <Check size={18} />
                     {selectedCategories.length} categoria{selectedCategories.length > 1 ? 's' : ''} selecionada{selectedCategories.length > 1 ? 's' : ''}
@@ -623,13 +623,13 @@ export default function AuthPage() {
           {/* Step 3: Location (for helpers only) */}
           {!isLogin && step === 3 && (role === 'helper' || role === 'needs_help') && (
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
+              <div className="bg-primary/10 rounded-2xl p-6 border-2 border-primary/20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <MapPin size={24} className="text-blue-600" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <MapPin size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-textPrimary">Localização</h3>
+                    <h3 className="font-bold text-foreground">Localização</h3>
                     <p className="text-sm text-muted-foreground">{role === 'needs_help' ? 'Encontre apoio próximo de você' : 'Ajude pessoas próximas de você'}</p>
                   </div>
                 </div>
@@ -639,7 +639,7 @@ export default function AuthPage() {
                     type="button"
                     onClick={getLocation}
                     disabled={loadingLocation}
-                    className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full rounded-xl bg-primary hover:bg-primary/90 text-white"
                   >
                     {loadingLocation ? (
                       <>
@@ -655,8 +655,8 @@ export default function AuthPage() {
                   </Button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="bg-green-100 rounded-xl p-3 border border-green-300">
-                      <p className="text-green-800 text-sm font-medium flex items-center gap-2">
+                    <div className="bg-primary/10 rounded-xl p-3 border border-primary/30">
+                      <p className="text-primary text-sm font-medium flex items-center gap-2">
                         <Check size={18} />
                         Localização obtida!
                       </p>
@@ -678,7 +678,7 @@ export default function AuthPage() {
               </div>
 
               {/* Opção de mostrar localização */}
-              <div className="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-200">
+              <div className="bg-secondary/10 rounded-2xl p-4 border-2 border-secondary/20">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -687,15 +687,15 @@ export default function AuthPage() {
                     className="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <div>
-                    <p className="font-medium text-textPrimary">Mostrar minha localização no mapa</p>
-                    <p className="text-sm text-textSecondary">
+                    <p className="font-medium text-foreground">Mostrar minha localização no mapa</p>
+                    <p className="text-sm text-muted-foreground">
                       Pessoas que precisam de ajuda poderão ver você no mapa de ajudantes próximos
                     </p>
                   </div>
                 </label>
               </div>
 
-              <p className="text-xs text-center text-textMuted">
+              <p className="text-xs text-center text-muted-foreground">
                 Você pode alterar essa configuração a qualquer momento no seu perfil
               </p>
             </div>
@@ -708,7 +708,7 @@ export default function AuthPage() {
             className={`w-full rounded-full py-6 text-lg font-bold ${
               role === 'migrant' && !isLogin
                 ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-primary hover:bg-primary-hover'
+                : 'bg-primary hover:bg-primary/90'
             }`}
           >
             {loading ? 'Carregando...' : (
@@ -729,7 +729,7 @@ export default function AuthPage() {
               setLocation(null);
               setShowLocation(false);
             }}
-            className="text-textSecondary hover:text-primary transition-colors"
+            className="text-muted-foreground hover:text-primary transition-colors"
           >
             {isLogin ? t('noAccount') : t('hasAccount')}
           </button>
