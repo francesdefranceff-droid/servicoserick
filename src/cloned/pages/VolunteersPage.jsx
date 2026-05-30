@@ -551,6 +551,9 @@ export default function VolunteersPage() {
           <ServicesMap height={380} showHelpRequests={true} />
         </div>
 
+        {/* Locais de ajuda próximos (alimentação, doações) */}
+        <NearbyHelpPlaces />
+
         {/* Cards de inspiração */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="relative h-40 rounded-2xl overflow-hidden">
