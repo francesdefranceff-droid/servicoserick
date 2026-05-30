@@ -10,7 +10,8 @@ import {
   Home as HomeIcon, Users as UsersIcon, Plus, BarChart3, MessageSquare,
   Video as VideoIcon, X as XIcon, Calendar, CreditCard, Star as StarIcon,
   Share2, Pin, Archive, Flag, Ban, ChevronRight, Copy, Clock, MoreHorizontal,
-  ThumbsUp, FileText, Receipt, History, ClipboardList, Wallet, Settings
+  ThumbsUp, FileText, Receipt, History, ClipboardList, Wallet, Settings,
+  Mic, Square
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MapPreview from '../components/MapPreview';
@@ -118,6 +119,76 @@ export default function DirectChatPage() {
   const videoInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [userPosts, setUserPosts] = useState([]);
+
+  // ====== Gravação de voz ======
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordStreamRef = useRef(null);
+
+  const stopRecording = (cancel = false) => {
+    try {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state !== 'inactive') {
+        mr._cancelled = cancel;
+        mr.stop();
+      }
+    } catch (e) { console.error(e); }
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recordStreamRef.current = null;
+    setIsRecording(false);
+  };
+
+  const startRecording = async () => {
+    if (isRecording) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      toast.error('Gravação de voz não suportada neste navegador');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordStreamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data?.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        const cancelled = mr._cancelled;
+        const chunks = audioChunksRef.current;
+        audioChunksRef.current = [];
+        if (cancelled || chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        if (blob.size > 10_000_000) { toast.error('Áudio muito longo (máx 10MB)'); return; }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          sendMessage({ media: [reader.result], media_type: 'audio' });
+        };
+        reader.readAsDataURL(blob);
+      };
+      mr.start();
+      setIsRecording(true);
+      setRecordSeconds(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordSeconds((s) => {
+          if (s >= 120) { stopRecording(false); return s; }
+          return s + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('[voice] erro:', err);
+      toast.error('Permita o acesso ao microfone');
+      recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+      recordStreamRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopRecording(true), []);
 
   // ====== Estado novo (sidebar de conversas + busca) ======
   const [conversations, setConversations] = useState([]);
@@ -740,6 +811,8 @@ export default function DirectChatPage() {
                                 {msg.media_type === 'image' ? (
                                   <img src={msg.media[0]} alt="" className="rounded-xl max-w-full max-h-64 cursor-pointer"
                                     onClick={() => window.open(msg.media[0], '_blank')} />
+                                ) : msg.media_type === 'audio' ? (
+                                  <audio src={msg.media[0]} controls className="max-w-full" />
                                 ) : (
                                   <video src={msg.media[0]} controls className="rounded-xl max-w-full max-h-64" />
                                 )}
@@ -798,43 +871,79 @@ export default function DirectChatPage() {
               <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileUpload(e, 'image')} className="hidden" />
 
               <div className="flex items-center gap-2 bg-gray-50 rounded-full px-3 py-1.5 border border-gray-200">
-                <button
-                  data-testid="toggle-media-button"
-                  onClick={() => setShowMediaOptions(!showMediaOptions)}
-                  className="p-2 hover:bg-gray-200 rounded-full transition"
-                  title="Anexar"
-                >
-                  <Paperclip size={18} className="text-gray-500" />
-                </button>
-                <button
-                  data-testid="open-camera"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="p-2 hover:bg-gray-200 rounded-full transition"
-                  title="Câmera"
-                >
-                  <Camera size={18} className="text-gray-500" />
-                </button>
-                <Textarea
-                  data-testid="message-input"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Sua mensagem"
-                  rows={1}
-                  className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[24px] max-h-32 py-1 text-sm shadow-none"
-                />
-                <button
-                  data-testid="send-message-button"
-                  onClick={() => sendMessage()}
-                  disabled={sending || !input.trim()}
-                  className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-40 text-white transition"
-                >
-                  {sending ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Send size={16} />
-                  )}
-                </button>
+                {isRecording ? (
+                  <>
+                    <button
+                      onClick={() => stopRecording(true)}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Cancelar"
+                    >
+                      <XIcon size={18} className="text-gray-500" />
+                    </button>
+                    <div className="flex-1 flex items-center gap-2 text-sm text-red-600 font-medium">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                      Gravando… {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')}
+                    </div>
+                    <button
+                      onClick={() => stopRecording(false)}
+                      className="w-9 h-9 grid place-items-center rounded-full bg-red-500 hover:bg-red-600 text-white transition"
+                      title="Enviar áudio"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      data-testid="toggle-media-button"
+                      onClick={() => setShowMediaOptions(!showMediaOptions)}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Anexar"
+                    >
+                      <Paperclip size={18} className="text-gray-500" />
+                    </button>
+                    <button
+                      data-testid="open-camera"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-2 hover:bg-gray-200 rounded-full transition"
+                      title="Câmera"
+                    >
+                      <Camera size={18} className="text-gray-500" />
+                    </button>
+                    <Textarea
+                      data-testid="message-input"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Sua mensagem"
+                      rows={1}
+                      className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[24px] max-h-32 py-1 text-sm shadow-none"
+                    />
+                    {input.trim() ? (
+                      <button
+                        data-testid="send-message-button"
+                        onClick={() => sendMessage()}
+                        disabled={sending}
+                        className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-40 text-white transition"
+                      >
+                        {sending ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send size={16} />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        data-testid="record-voice-button"
+                        onClick={startRecording}
+                        className="w-9 h-9 grid place-items-center rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white transition"
+                        title="Gravar áudio"
+                      >
+                        <Mic size={16} />
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}
