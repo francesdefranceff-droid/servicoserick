@@ -11,7 +11,7 @@ export default function SouVoluntarioPage() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
           <ArrowLeft className="w-5 h-5" /> Voltar
         </button>
-        <Button onClick={() => navigate('/auth?mode=register&role=volunteer')} className="rounded-full">
+        <Button onClick={() => navigate('/oferecer-ajuda?mode=register')} className="rounded-full">
           Cadastrar como voluntário
         </Button>
       </header>
@@ -44,7 +44,7 @@ export default function SouVoluntarioPage() {
 
         <div className="mt-12 text-center">
           <Button
-            onClick={() => navigate('/auth?mode=register&role=volunteer')}
+            onClick={() => navigate('/oferecer-ajuda?mode=register')}
             className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-14 px-10 text-base"
           >
             Quero ser voluntário
