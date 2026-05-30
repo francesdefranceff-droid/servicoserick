@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Plus, Radio, X, Video, VideoOff, Mic, MicOff, ImagePlus, Heart, MessageCircle, Send, Info } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import LiveIndicators from './LiveIndicators';
 
 const STORAGE_KEY = 'svc:stories:v1';
 
