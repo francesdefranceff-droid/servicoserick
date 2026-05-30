@@ -82,6 +82,27 @@ export type Database = {
         }
         Relationships: []
       }
+      live_streams: {
+        Row: {
+          avatar_url: string | null
+          display_name: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
