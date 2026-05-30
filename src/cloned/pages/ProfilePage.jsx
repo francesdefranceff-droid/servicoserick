@@ -574,7 +574,7 @@ export default function ProfilePage() {
                   </p>
                 )}
                 {/* Bolinha única: Stories + Ao vivo (abaixo do nome/assinatura) */}
-                <div className="mt-3 relative z-[60] overflow-visible pb-2">
+                <div className="mt-3 relative z-0 overflow-visible pb-2">
                   <ProfileStories avatarSrc={avatarSrc} userName={user?.display_name || user?.name || 'Você'} />
                 </div>
                 <p className="text-green-600 text-sm font-medium flex items-center gap-1.5 mt-1">
