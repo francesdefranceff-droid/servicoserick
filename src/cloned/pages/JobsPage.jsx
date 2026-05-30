@@ -303,44 +303,23 @@ export default function JobsPage() {
         isPlatformSearch: true,
       }));
 
-      // ArbeitNow free API — sem chave, com CORS, traz localização real de cada vaga
-      const qNorm = normalizeText(q);
-      const locNorm = normalizeText(loc);
-      let jobs = [];
-      try {
-        const url = `https://www.arbeitnow.com/api/job-board-api`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const json = await res.json();
-          const all = Array.isArray(json?.data) ? json.data : [];
-          jobs = all
-            .filter((j) => {
-              const hay = normalizeText(`${j.title || ''} ${j.description || ''} ${(j.tags || []).join(' ')}`);
-              const locHay = normalizeText(j.location || '');
-              const matchQ = !qNorm || hay.includes(qNorm);
-              const matchLoc = !locNorm || locHay.includes(locNorm) || j.remote;
-              return matchQ && matchLoc;
-            })
-            .slice(0, 25)
-            .map((j) => ({
-              id: j.slug,
-              title: j.title,
-              company: j.company_name,
-              company_logo: null,
-              location: j.location || loc,
-              url: j.url,
-              description: j.description,
-              salary: null,
-              category: (j.tags || [])[0] || 'Vaga',
-              publication_date: j.created_at ? new Date(j.created_at * 1000).toISOString() : new Date().toISOString(),
-              source: 'ArbeitNow',
-              is_remote: j.remote,
-              employment_type: (j.job_types || [])[0],
-            }));
-        }
-      } catch (e) {
-        console.warn('ArbeitNow indisponível, usando apenas plataformas', e);
-      }
+      const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=30`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Falha na busca');
+      const json = await res.json();
+      const jobs = (json?.jobs || []).map((j) => ({
+        id: j.id,
+        title: j.title,
+        company: j.company_name,
+        company_logo: j.company_logo,
+        location: j.candidate_required_location || loc,
+        url: j.url,
+        description: j.description,
+        salary: j.salary,
+        category: j.category,
+        publication_date: j.publication_date,
+        source: 'Remotive',
+      }));
 
       const combinedJobs = [...platformResults, ...jobs];
       setExternalJobs(combinedJobs);
@@ -350,7 +329,7 @@ export default function JobsPage() {
       saveLastJobSearch({ userId: user?.id, query: q, location: loc, category: selectedCategory, jobs: combinedJobs });
 
       if (combinedJobs.length > 0) {
-        toast.success(`${combinedJobs.length} vagas em ${loc} carregadas!`);
+        toast.success(`${combinedJobs.length} opções de emprego carregadas!`);
       } else {
         toast.info('Nenhuma vaga encontrada. Tente outros termos.');
       }
@@ -778,24 +757,19 @@ export default function JobsPage() {
                           
                           <p className="text-sm text-gray-600 mt-1">{job.company}</p>
                           
-                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
                               <MapPin size={12} />
-                              {job.location || locationQuery || 'Brasil'}
+                              {job.location || 'Brasil'}
                             </span>
-                            {job.source && (
-                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                                {job.source}
-                              </span>
-                            )}
                             {job.posted && (
-                              <span className="flex items-center gap-1 text-gray-500">
+                              <span className="flex items-center gap-1">
                                 <Clock size={12} />
                                 {job.posted}
                               </span>
                             )}
                             {(job.type || job.employment_type) && (
-                              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                              <span className="px-2 py-0.5 bg-gray-100 rounded-full">
                                 {job.type || job.employment_type}
                               </span>
                             )}
