@@ -120,6 +120,76 @@ export default function DirectChatPage() {
   const cameraInputRef = useRef(null);
   const [userPosts, setUserPosts] = useState([]);
 
+  // ====== Gravação de voz ======
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordStreamRef = useRef(null);
+
+  const stopRecording = (cancel = false) => {
+    try {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state !== 'inactive') {
+        mr._cancelled = cancel;
+        mr.stop();
+      }
+    } catch (e) { console.error(e); }
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recordStreamRef.current = null;
+    setIsRecording(false);
+  };
+
+  const startRecording = async () => {
+    if (isRecording) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      toast.error('Gravação de voz não suportada neste navegador');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordStreamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data?.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        const cancelled = mr._cancelled;
+        const chunks = audioChunksRef.current;
+        audioChunksRef.current = [];
+        if (cancelled || chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        if (blob.size > 10_000_000) { toast.error('Áudio muito longo (máx 10MB)'); return; }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          sendMessage({ media: [reader.result], media_type: 'audio' });
+        };
+        reader.readAsDataURL(blob);
+      };
+      mr.start();
+      setIsRecording(true);
+      setRecordSeconds(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordSeconds((s) => {
+          if (s >= 120) { stopRecording(false); return s; }
+          return s + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('[voice] erro:', err);
+      toast.error('Permita o acesso ao microfone');
+      recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+      recordStreamRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopRecording(true), []);
+
   // ====== Estado novo (sidebar de conversas + busca) ======
   const [conversations, setConversations] = useState([]);
   const [convFilter, setConvFilter] = useState('all'); // all | unread | archived
