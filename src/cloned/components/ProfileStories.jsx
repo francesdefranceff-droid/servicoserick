@@ -140,28 +140,24 @@ export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
 
   const startLive = async () => {
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        alert('Seu navegador não liberou câmera/microfone neste dispositivo.');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Faça login para transmitir ao vivo.');
         return;
       }
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
-      } catch {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-        } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-        }
-      }
-      liveStreamRef.current = stream;
-      setCamOn(stream.getVideoTracks().some((track) => track.enabled));
-      setMicOn(stream.getAudioTracks().some((track) => track.enabled));
+      // Registra a live para que outros vejam o selo "AO VIVO"
+      await supabase.from('live_streams').upsert({
+        user_id: user.id,
+        display_name: userName || user.email?.split('@')[0] || 'Usuário',
+        avatar_url: avatarSrc || null,
+        started_at: new Date().toISOString(),
+      });
       setLive(true);
       setViewers(1);
-      announceLive();
+      // Abre a sala Jitsi como transmissor (mesma sala que os espectadores vão entrar)
+      navigate(`/call/live-${user.id}?kind=video`);
     } catch (err) {
-      alert('Não foi possível acessar câmera/microfone: ' + err.message);
+      alert('Não foi possível iniciar a live: ' + (err?.message || err));
     }
   };
 
