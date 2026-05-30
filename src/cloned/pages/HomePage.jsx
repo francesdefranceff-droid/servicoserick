@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import BottomNav from '../components/BottomNav';
-import { Plus, MapPin, User, Clock, MessageCircle, Image as ImageIcon, MessageSquare, Send, X, Filter, Info, ExternalLink, Lock, Utensils, Scale, Heart, Home as HomeIcon, Briefcase, GraduationCap, Users, Shirt, Armchair, Car, Wrench, Sparkles, Baby, Flower2, Monitor, Package, Search, ChevronLeft, ChevronRight, Building2, Camera } from 'lucide-react';
+import { Plus, MapPin, User, Clock, MessageCircle, Image as ImageIcon, MessageSquare, Send, X, Filter, Info, ExternalLink, Lock, Utensils, Scale, Heart, Home as HomeIcon, Briefcase, GraduationCap, Users, Shirt, Armchair, Car, Wrench, Sparkles, Baby, Flower2, Monitor, Package, Search, ChevronLeft, ChevronRight, Building2, Camera, HandHeart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
+import heroVolunteersImg from '@/assets/home-hero-volunteers.jpg';
+import { updateSvcProfile } from '../lib/authProfile';
 
 const RESOURCES_INFO = {
   work: {
