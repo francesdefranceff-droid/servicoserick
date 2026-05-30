@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
-import { Search, Briefcase, MapPin, Star, Heart, HandHeart } from 'lucide-react';
+import { Search, Briefcase, MapPin, Star } from 'lucide-react';
 import i18n from '../i18n';
+import AuthModal from '../components/AuthModal';
 import CountryMonuments from '@/components/CountryMonuments';
 import heroImg from '@/assets/monument-brasil.jpg';
 
@@ -11,6 +12,9 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [language, setLanguage] = useState((i18n.language || 'pt').toUpperCase().slice(0, 2));
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const openAuth = (mode) => { setAuthMode(mode); setAuthOpen(true); };
 
   const changeLanguage = (lang) => {
     const code = lang.toLowerCase();
@@ -67,14 +71,14 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
-                onClick={() => navigate('/auth')}
+                onClick={() => openAuth('login')}
                 className="border-gray-300 rounded-full flex-1 sm:flex-none"
                 data-testid="landing-login-btn"
               >
                 {t('login') || 'Entrar'}
               </Button>
               <Button
-                onClick={() => navigate('/procurar-servicos?mode=register')}
+                onClick={() => openAuth('signup')}
                 className="bg-gray-900 hover:bg-gray-800 text-white rounded-full flex-1 sm:flex-none"
                 data-testid="landing-register-btn"
               >
@@ -84,6 +88,9 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
+
+
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} mode={authMode} onModeChange={setAuthMode} />
 
 
       {/* Hero Section */}
@@ -116,26 +123,26 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-center lg:justify-start">
               <Button
-                onClick={() => navigate('/procurar-ajuda?mode=register')}
+                onClick={() => openAuth('signup')}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-14 px-8 text-base rounded-full"
                 data-testid="cta-need-help"
               >
-                <Heart className="w-5 h-5 mr-2" />
-                Procuro ajuda
+                <Search className="w-5 h-5 mr-2" />
+                Buscar Vagas
               </Button>
               <Button
-                onClick={() => navigate('/oferecer-ajuda?mode=register')}
+                onClick={() => openAuth('signup')}
                 variant="outline"
                 className="border-2 border-secondary text-gray-900 bg-white hover:bg-secondary/10 h-14 px-8 text-base rounded-full font-semibold"
                 data-testid="cta-want-help"
               >
-                <HandHeart className="w-5 h-5 mr-2" />
-                Quero oferecer ajuda
+                <Briefcase className="w-5 h-5 mr-2" />
+                Publicar Vaga
               </Button>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mb-12 items-center justify-center lg:justify-start">
               <Button
-                onClick={() => navigate('/procurar-servicos?mode=register')}
+                onClick={() => openAuth('signup')}
                 className="bg-green-500 hover:bg-green-600 text-white h-12 px-6 text-sm rounded-full"
                 data-testid="cta-search-services"
               >
@@ -143,7 +150,7 @@ export default function LandingPage() {
                 Buscar Serviços
               </Button>
               <Button
-                onClick={() => navigate('/oferecer-servicos?mode=register')}
+                onClick={() => navigate('/oferecer-servicos')}
                 variant="outline"
                 className="border-2 border-orange-400 text-orange-600 bg-white hover:bg-orange-50 h-12 px-6 text-sm rounded-full font-semibold"
                 data-testid="cta-offer-services"
@@ -198,7 +205,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center space-x-4">
             <Button
-              onClick={() => navigate('/procurar-servicos?mode=register')}
+              onClick={() => openAuth('signup')}
               className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 rounded-full"
               data-testid="bottom-cta-register"
             >

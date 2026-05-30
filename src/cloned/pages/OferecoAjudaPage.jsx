@@ -11,7 +11,7 @@ export default function OferecoAjudaPage() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-700 hover:text-gray-900">
           <ArrowLeft className="w-5 h-5" /> Voltar
         </button>
-        <Button onClick={() => navigate('/oferecer-ajuda?mode=register')} className="rounded-full">
+        <Button onClick={() => navigate('/auth?mode=register&role=helper')} className="rounded-full">
           Quero ajudar agora
         </Button>
       </header>
@@ -41,7 +41,7 @@ export default function OferecoAjudaPage() {
 
         <div className="mt-12 text-center">
           <Button
-            onClick={() => navigate('/oferecer-ajuda?mode=register')}
+            onClick={() => navigate('/auth?mode=register&role=helper')}
             className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-14 px-10 text-base"
           >
             Começar a ajudar
