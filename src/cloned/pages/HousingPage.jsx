@@ -69,6 +69,7 @@ export default function HousingPage() {
     title: '',
     description: '',
     city: '',
+    country: '',
     address: '',
     accommodation_type: 'room',
     duration: 'temporary',
