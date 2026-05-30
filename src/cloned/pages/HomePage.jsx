@@ -729,17 +729,35 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Voluntário com foto real */}
-      <section className="relative overflow-hidden">
-        <img
-          src={heroVolunteersImg}
-          alt="Voluntários distribuindo alimentos e roupas para a comunidade"
-          className="absolute inset-0 w-full h-full object-cover"
-          width={1600}
-          height={896}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />
-        <div className="relative max-w-[1200px] mx-auto px-4 py-8 sm:py-12 text-white">
+      {/* Hero Voluntário com foto real + efeito 3D */}
+      <section
+        className="relative overflow-hidden"
+        style={{ perspective: '1200px' }}
+      >
+        <div
+          className="absolute inset-0 will-change-transform animate-[heroTilt_14s_ease-in-out_infinite_alternate]"
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          <img
+            src={heroVolunteersImg}
+            alt="Voluntários distribuindo alimentos e roupas para a comunidade"
+            className="absolute inset-0 w-full h-full object-cover scale-110"
+            width={1600}
+            height={896}
+            style={{ transform: 'translateZ(-40px)' }}
+          />
+        </div>
+        <style>{`
+          @keyframes heroTilt {
+            0%   { transform: rotateX(2deg) rotateY(-3deg) translateZ(0); }
+            50%  { transform: rotateX(-1deg) rotateY(2deg) translateZ(10px); }
+            100% { transform: rotateX(3deg) rotateY(-2deg) translateZ(0); }
+          }
+        `}</style>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-gray-50 to-transparent" />
+        <div className="relative max-w-[1200px] mx-auto px-4 py-10 sm:py-16 text-white" style={{ transform: 'translateZ(40px)' }}>
+
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur border border-white/20 text-[11px] font-semibold mb-3">
               <HandHeart size={14} /> Comunidade voluntária
