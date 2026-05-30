@@ -1,18 +1,61 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../ClonedAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2, Search, Briefcase, HandHeart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getOrCreateSvcProfile, normalizeAuthUser } from '../lib/authProfile';
-import jataiWorkImage from '@/assets/auth-volunteers-hero.jpg';
+import jataiWorkImage from '@/assets/jatai-work.jpg';
+import searchServicesImage from '@/assets/auth-search-services.jpg';
+import offerServicesImage from '@/assets/auth-offer-services.jpg';
+import needHelpImage from '@/assets/auth-need-help.jpg';
+import offerHelpImage from '@/assets/auth-offer-help.jpg';
 import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, slugifyCategoryName } from '../lib/serviceCategories';
 
 const HELP_CATEGORIES = WORK_SERVICE_CATEGORIES;
+
+const FLOW_CONFIG = {
+  migrant: {
+    role: 'migrant',
+    label: 'Procuro serviço',
+    title: 'Encontre serviços confiáveis perto de você',
+    subtitle: 'Informe sua região e conecte-se com profissionais, voluntários e oportunidades reais da comunidade.',
+    image: searchServicesImage,
+    icon: Search,
+    accent: 'primary',
+  },
+  helper: {
+    role: 'helper',
+    label: 'Quero oferecer serviços',
+    title: 'Mostre seu trabalho para quem precisa',
+    subtitle: 'Cadastre suas habilidades, defina sua área de atuação e receba solicitações da sua região.',
+    image: offerServicesImage,
+    icon: Briefcase,
+    accent: 'secondary',
+  },
+  needs_help: {
+    role: 'needs_help',
+    label: 'Procuro ajuda',
+    title: 'Peça apoio com dignidade e segurança',
+    subtitle: 'Conte o que você precisa e encontre pessoas voluntárias preparadas para ajudar no seu território.',
+    image: needHelpImage,
+    icon: Heart,
+    accent: 'primary',
+  },
+  volunteer: {
+    role: 'volunteer',
+    label: 'Quero oferecer ajuda',
+    title: 'Transforme tempo livre em cuidado real',
+    subtitle: 'Entre na rede voluntária, escolha como ajudar e apoie pessoas que precisam de orientação, alimento, abrigo ou escuta.',
+    image: offerHelpImage,
+    icon: HandHeart,
+    accent: 'secondary',
+  },
+};
 
 const professionalAreas = [
   { value: 'legal', label: 'Jurídico', icon: '⚖️' },
@@ -29,14 +72,26 @@ const professionalAreas = [
 
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
+  const locationInfo = useLocation();
+  const roleFromPath = locationInfo.pathname.includes('oferecer-servicos')
+    ? 'helper'
+    : locationInfo.pathname.includes('procurar-ajuda')
+      ? 'needs_help'
+      : locationInfo.pathname.includes('oferecer-ajuda') || locationInfo.pathname.includes('ofereco-ajuda') || locationInfo.pathname.includes('sou-voluntario')
+        ? 'volunteer'
+        : locationInfo.pathname.includes('procurar-servicos')
+          ? 'migrant'
+          : null;
   const roleFromUrl = searchParams.get('role');
+  const modeFromUrl = searchParams.get('mode');
   const nextPath = searchParams.get('next');
   
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(!(modeFromUrl === 'register' || modeFromUrl === 'signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState(roleFromUrl || 'migrant');
+  const initialRole = FLOW_CONFIG[roleFromUrl] ? roleFromUrl : (FLOW_CONFIG[roleFromPath] ? roleFromPath : 'migrant');
+  const [role, setRole] = useState(initialRole);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   
@@ -59,6 +114,9 @@ export default function AuthPage() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const flow = FLOW_CONFIG[role] || FLOW_CONFIG.migrant;
+  const FlowIcon = flow.icon;
+  const categoryRoles = ['migrant', 'helper', 'needs_help'];
 
   const getPostAuthPath = () => {
     if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
@@ -149,25 +207,26 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Se é cadastro de migrante ou helper e está na etapa 1, vai para etapa 2
-    if (!isLogin && (role === 'migrant' || role === 'helper') && step === 1) {
+    // Se é cadastro por área e está na etapa 1, vai para categorias/localização
+    if (!isLogin && categoryRoles.includes(role) && step === 1) {
       setStep(2);
       return;
     }
     
-    // Se é helper e está na etapa 2, vai para etapa 3 (localização)
-    if (!isLogin && role === 'helper' && step === 2) {
-      if (selectedCategories.length === 0) {
-        toast.error('Selecione pelo menos uma categoria que você quer ajudar');
-        return;
-      }
+    if (!isLogin && categoryRoles.includes(role) && step === 2 && selectedCategories.length === 0) {
+      toast.error(role === 'helper' ? 'Selecione pelo menos uma categoria que você quer oferecer' : 'Selecione pelo menos uma categoria');
+      return;
+    }
+
+    // Se é helper ou precisa de ajuda, etapa final pede região para conectar pessoas próximas
+    if (!isLogin && (role === 'helper' || role === 'needs_help') && step === 2) {
       setStep(3);
       return;
     }
     
     // Validação para migrantes
-    if (!isLogin && role === 'migrant' && selectedCategories.length === 0) {
-      toast.error('Selecione pelo menos uma categoria de ajuda que você precisa');
+    if (!isLogin && categoryRoles.includes(role) && selectedCategories.length === 0) {
+      toast.error('Selecione pelo menos uma categoria antes de continuar');
       return;
     }
 
@@ -242,62 +301,68 @@ export default function AuthPage() {
   };
 
   const getStepTitle = () => {
-    if (isLogin) return t('login');
+    if (isLogin) return 'Entrar na sua área';
     if (step === 1) return t('register');
     if (step === 2) {
-      if (role === 'migrant') return 'O que você precisa?';
-      if (role === 'helper') return 'Como você quer ajudar?';
+      if (role === 'migrant') return 'Que serviço você procura?';
+      if (role === 'helper') return 'Que serviços você oferece?';
+      if (role === 'needs_help') return 'Que ajuda você precisa?';
     }
-    if (step === 3 && role === 'helper') return 'Sua Localização';
+    if (step === 3 && (role === 'helper' || role === 'needs_help')) return 'Sua região';
     return t('register');
   };
 
   const getStepSubtitle = () => {
-    if (step === 2 && role === 'migrant') return 'Selecione as áreas em que você precisa de ajuda';
-    if (step === 2 && role === 'helper') return 'Selecione as áreas em que você pode oferecer ajuda';
-    if (step === 3 && role === 'helper') return 'Compartilhe sua localização para ajudar pessoas próximas';
+    if (step === 2 && role === 'migrant') return 'Selecione as áreas em que você quer encontrar profissionais ou apoio';
+    if (step === 2 && role === 'helper') return 'Selecione as áreas em que você pode atender pessoas da sua região';
+    if (step === 2 && role === 'needs_help') return 'Selecione as áreas de apoio voluntário que você precisa';
+    if (step === 3 && (role === 'helper' || role === 'needs_help')) return 'Informe sua região para aproximar conexões reais';
     return null;
   };
 
   const getTotalSteps = () => {
-    if (role === 'helper') return 3;
+    if (role === 'helper' || role === 'needs_help') return 3;
     if (role === 'migrant') return 2;
     return 1;
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Lado Esquerdo - Imagem de Fundo */}
+    <div className="min-h-screen flex bg-background">
+      {/* Lado Esquerdo - Página da área escolhida */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Imagem de trabalho em Jataí */}
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-          style={{ backgroundImage: `url(${jataiWorkImage})` }}
+        <img
+          src={flow.image || jataiWorkImage}
+          alt={`${flow.label} na rede voluntária PertoDeMimServicos`}
+          width={1280}
+          height={896}
+          className="absolute inset-0 h-full w-full object-cover transition-all duration-700"
         />
-        {/* Overlay verde Goiás → âmbar */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/75 via-primary/50 to-secondary/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-foreground/80 via-foreground/35 to-primary/55" />
 
-        {/* Conteúdo sobre a imagem */}
-        <div className="relative z-10 flex flex-col justify-center items-center text-primary-foreground p-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">
-            {role === 'helper' ? 'Ofereça Trabalho' : 'Encontre Trabalho em Jataí'}
+        <div className="relative z-10 flex flex-col justify-end text-primary-foreground p-12 pb-16">
+          <div className="inline-flex w-fit items-center gap-2 bg-background/15 backdrop-blur-md rounded-full px-4 py-2 border border-background/25 mb-6">
+            <FlowIcon className="w-5 h-5" />
+            <span className="text-sm font-semibold">{flow.label}</span>
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-bold mb-4 max-w-xl leading-tight">
+            {flow.title}
           </h1>
-          <p className="text-xl text-primary-foreground/90 max-w-md">
-            {role === 'helper'
-              ? 'Conecte-se com profissionais qualificados da região de Goiás e impulsione seu negócio.'
-              : 'Acesse vagas, demandas e oportunidades de trabalho em Jataí e região do Cerrado.'}
+          <p className="text-lg text-primary-foreground/90 max-w-lg leading-relaxed">
+            {flow.subtitle}
           </p>
-          <div className="mt-8 flex items-center gap-4">
-            <div className="bg-background/20 backdrop-blur-sm rounded-full px-6 py-3 border border-background/30">
-              <span className="text-lg font-semibold">+500 oportunidades em Jataí</span>
-            </div>
+          <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg">
+            {['Região primeiro', 'Contexto voluntário', 'Conexões reais'].map((item) => (
+              <div key={item} className="bg-background/15 backdrop-blur-md rounded-2xl px-4 py-3 border border-background/20 text-sm font-semibold">
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
 
-      {/* Lado Direito - Formulário */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 gradient-bg">
+      {/* Lado Direito - Página de entrada */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 gradient-bg">
         <button
           onClick={goBack}
           className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/50 transition-all lg:left-auto lg:right-6"
@@ -306,9 +371,18 @@ export default function AuthPage() {
           <ArrowLeft size={24} />
         </button>
 
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-card p-8 animate-fade-in" data-testid="auth-form">
+        <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl overflow-hidden animate-fade-in" data-testid="auth-form">
+        <div className="lg:hidden relative h-40 overflow-hidden">
+          <img src={flow.image || jataiWorkImage} alt={`${flow.label} na comunidade`} width={1280} height={896} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/65 to-transparent" />
+          <div className="absolute bottom-4 left-5 right-5 text-primary-foreground">
+            <p className="text-xs font-semibold mb-1">{flow.label}</p>
+            <h1 className="text-xl font-bold leading-tight">{flow.title}</h1>
+          </div>
+        </div>
+        <div className="p-6 sm:p-8">
         {/* Step indicator for registration */}
-        {!isLogin && (role === 'migrant' || role === 'helper') && (
+        {!isLogin && categoryRoles.includes(role) && (
           <div className="flex justify-center mb-6">
             <div className="flex items-center gap-2">
               {[...Array(getTotalSteps())].map((_, idx) => (
@@ -327,12 +401,12 @@ export default function AuthPage() {
           </div>
         )}
 
-        <h2 className="text-3xl font-heading font-bold text-textPrimary mb-2 text-center">
+        <h2 className="text-3xl font-heading font-bold text-foreground mb-2 text-center">
           {getStepTitle()}
         </h2>
         
         {getStepSubtitle() && (
-          <p className="text-center text-textSecondary mb-6">
+          <p className="text-center text-muted-foreground mb-6">
             {getStepSubtitle()}
           </p>
         )}
@@ -383,40 +457,52 @@ export default function AuthPage() {
 
               {!isLogin && (
                 <div>
-                  <Label>Você é</Label>
+                  <Label htmlFor="region">Sua região</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="region"
+                      value={locationAddress}
+                      onChange={(e) => setLocationAddress(e.target.value)}
+                      placeholder="Cidade, estado ou país"
+                      className="rounded-xl"
+                    />
+                    <Button type="button" variant="outline" onClick={getLocation} disabled={loadingLocation} className="rounded-xl shrink-0">
+                      {loadingLocation ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!isLogin && (
+                <div>
+                  <Label>Escolha sua área</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
-                    <button
-                      type="button"
-                      data-testid="role-migrant"
-                      onClick={() => { setRole('migrant'); setSelectedCategories([]); }}
-                      className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
-                        role === 'migrant'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <User size={24} />
-                      <span>Procuro serviço</span>
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="role-helper"
-                      onClick={() => { setRole('helper'); setSelectedCategories([]); }}
-                      className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
-                        role === 'helper'
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <Heart size={24} />
-                      <span>Ofereço serviço</span>
-                    </button>
+                    {Object.values(FLOW_CONFIG).map((option) => {
+                      const OptionIcon = option.icon;
+                      const selected = role === option.role;
+                      return (
+                        <button
+                          key={option.role}
+                          type="button"
+                          data-testid={`role-${option.role}`}
+                          onClick={() => { setRole(option.role); setSelectedCategories([]); setStep(1); }}
+                          className={`py-4 px-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-2 ${
+                            selected
+                              ? 'bg-primary text-primary-foreground shadow-lg'
+                              : 'bg-muted text-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          <OptionIcon size={24} />
+                          <span>{option.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {!isLogin && role === 'volunteer' && (
-                <div className="space-y-4 p-4 bg-blue-50 rounded-xl border-2 border-primary/20">
+                <div className="space-y-4 p-4 bg-primary/10 rounded-xl border-2 border-primary/20">
                   <h3 className="font-bold text-primary flex items-center gap-2">
                     <Shield size={20} />
                     Informações Profissionais
@@ -473,7 +559,7 @@ export default function AuthPage() {
           )}
 
           {/* Step 2: Categories (for migrants and helpers) */}
-          {!isLogin && step === 2 && (role === 'migrant' || role === 'helper') && (
+          {!isLogin && step === 2 && categoryRoles.includes(role) && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {HELP_CATEGORIES.map(cat => {
@@ -495,10 +581,10 @@ export default function AuthPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{cat.icon}</span>
                       <div>
-                        <div className={`text-sm font-bold ${selected ? 'text-white' : 'text-textPrimary'}`}>
+                        <div className={`text-sm font-bold ${selected ? 'text-white' : 'text-foreground'}`}>
                           {cat.label}
                         </div>
-                        <div className={`text-xs ${selected ? 'text-white/80' : 'text-textSecondary'}`}>
+                        <div className={`text-xs ${selected ? 'text-white/80' : 'text-muted-foreground'}`}>
                           {cat.desc}
                         </div>
                       </div>
@@ -520,11 +606,11 @@ export default function AuthPage() {
               {selectedCategories.length > 0 && (
                 <div className={`p-3 rounded-xl border ${
                   role === 'migrant' 
-                    ? 'bg-green-100 border-green-300' 
+                    ? 'bg-primary/10 border-primary/30' 
                     : 'bg-primary/10 border-primary/30'
                 }`}>
                   <p className={`text-sm font-medium flex items-center gap-2 ${
-                    role === 'migrant' ? 'text-green-800' : 'text-primary'
+                    role === 'migrant' ? 'text-primary' : 'text-primary'
                   }`}>
                     <Check size={18} />
                     {selectedCategories.length} categoria{selectedCategories.length > 1 ? 's' : ''} selecionada{selectedCategories.length > 1 ? 's' : ''}
@@ -535,16 +621,16 @@ export default function AuthPage() {
           )}
 
           {/* Step 3: Location (for helpers only) */}
-          {!isLogin && step === 3 && role === 'helper' && (
+          {!isLogin && step === 3 && (role === 'helper' || role === 'needs_help') && (
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
+              <div className="bg-primary/10 rounded-2xl p-6 border-2 border-primary/20">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <MapPin size={24} className="text-blue-600" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <MapPin size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-textPrimary">Localização</h3>
-                    <p className="text-sm text-textSecondary">Ajude pessoas próximas de você</p>
+                    <h3 className="font-bold text-foreground">Localização</h3>
+                    <p className="text-sm text-muted-foreground">{role === 'needs_help' ? 'Encontre apoio próximo de você' : 'Ajude pessoas próximas de você'}</p>
                   </div>
                 </div>
 
@@ -553,7 +639,7 @@ export default function AuthPage() {
                     type="button"
                     onClick={getLocation}
                     disabled={loadingLocation}
-                    className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full rounded-xl bg-primary hover:bg-primary/90 text-white"
                   >
                     {loadingLocation ? (
                       <>
@@ -569,13 +655,13 @@ export default function AuthPage() {
                   </Button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="bg-green-100 rounded-xl p-3 border border-green-300">
-                      <p className="text-green-800 text-sm font-medium flex items-center gap-2">
+                    <div className="bg-primary/10 rounded-xl p-3 border border-primary/30">
+                      <p className="text-primary text-sm font-medium flex items-center gap-2">
                         <Check size={18} />
                         Localização obtida!
                       </p>
                       {locationAddress && (
-                        <p className="text-green-700 text-xs mt-1 line-clamp-2">{locationAddress}</p>
+                        <p className="text-primary text-xs mt-1 line-clamp-2">{locationAddress}</p>
                       )}
                     </div>
                     <Button
@@ -592,7 +678,7 @@ export default function AuthPage() {
               </div>
 
               {/* Opção de mostrar localização */}
-              <div className="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-200">
+              <div className="bg-secondary/10 rounded-2xl p-4 border-2 border-secondary/20">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -601,15 +687,15 @@ export default function AuthPage() {
                     className="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <div>
-                    <p className="font-medium text-textPrimary">Mostrar minha localização no mapa</p>
-                    <p className="text-sm text-textSecondary">
+                    <p className="font-medium text-foreground">Mostrar minha localização no mapa</p>
+                    <p className="text-sm text-muted-foreground">
                       Pessoas que precisam de ajuda poderão ver você no mapa de ajudantes próximos
                     </p>
                   </div>
                 </label>
               </div>
 
-              <p className="text-xs text-center text-textMuted">
+              <p className="text-xs text-center text-muted-foreground">
                 Você pode alterar essa configuração a qualquer momento no seu perfil
               </p>
             </div>
@@ -622,7 +708,7 @@ export default function AuthPage() {
             className={`w-full rounded-full py-6 text-lg font-bold ${
               role === 'migrant' && !isLogin
                 ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-primary hover:bg-primary-hover'
+                : 'bg-primary hover:bg-primary/90'
             }`}
           >
             {loading ? 'Carregando...' : (
@@ -643,13 +729,14 @@ export default function AuthPage() {
               setLocation(null);
               setShowLocation(false);
             }}
-            className="text-textSecondary hover:text-primary transition-colors"
+            className="text-muted-foreground hover:text-primary transition-colors"
           >
             {isLogin ? t('noAccount') : t('hasAccount')}
           </button>
         </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
