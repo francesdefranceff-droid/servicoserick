@@ -6,13 +6,56 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2, Search, Briefcase, HandHeart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { getOrCreateSvcProfile, normalizeAuthUser } from '../lib/authProfile';
 import jataiWorkImage from '@/assets/jatai-work.jpg';
+import searchServicesImage from '@/assets/auth-search-services.jpg';
+import offerServicesImage from '@/assets/auth-offer-services.jpg';
+import needHelpImage from '@/assets/auth-need-help.jpg';
+import offerHelpImage from '@/assets/auth-offer-help.jpg';
 import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, slugifyCategoryName } from '../lib/serviceCategories';
 
 const HELP_CATEGORIES = WORK_SERVICE_CATEGORIES;
+
+const FLOW_CONFIG = {
+  migrant: {
+    role: 'migrant',
+    label: 'Procuro serviço',
+    title: 'Encontre serviços confiáveis perto de você',
+    subtitle: 'Informe sua região e conecte-se com profissionais, voluntários e oportunidades reais da comunidade.',
+    image: searchServicesImage,
+    icon: Search,
+    accent: 'primary',
+  },
+  helper: {
+    role: 'helper',
+    label: 'Quero oferecer serviços',
+    title: 'Mostre seu trabalho para quem precisa',
+    subtitle: 'Cadastre suas habilidades, defina sua área de atuação e receba solicitações da sua região.',
+    image: offerServicesImage,
+    icon: Briefcase,
+    accent: 'secondary',
+  },
+  needs_help: {
+    role: 'needs_help',
+    label: 'Procuro ajuda',
+    title: 'Peça apoio com dignidade e segurança',
+    subtitle: 'Conte o que você precisa e encontre pessoas voluntárias preparadas para ajudar no seu território.',
+    image: needHelpImage,
+    icon: Heart,
+    accent: 'primary',
+  },
+  volunteer: {
+    role: 'volunteer',
+    label: 'Quero oferecer ajuda',
+    title: 'Transforme tempo livre em cuidado real',
+    subtitle: 'Entre na rede voluntária, escolha como ajudar e apoie pessoas que precisam de orientação, alimento, abrigo ou escuta.',
+    image: offerHelpImage,
+    icon: HandHeart,
+    accent: 'secondary',
+  },
+};
 
 const professionalAreas = [
   { value: 'legal', label: 'Jurídico', icon: '⚖️' },
