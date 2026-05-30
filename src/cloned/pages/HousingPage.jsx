@@ -69,6 +69,7 @@ export default function HousingPage() {
     title: '',
     description: '',
     city: '',
+    country: '',
     address: '',
     accommodation_type: 'room',
     duration: 'temporary',
@@ -192,6 +193,7 @@ export default function HousingPage() {
       title: '',
       description: '',
       city: '',
+      country: '',
       address: '',
       accommodation_type: 'room',
       duration: 'temporary',
@@ -445,7 +447,7 @@ export default function HousingPage() {
                 <div className="space-y-1">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1">
-                      {listing.city}, France
+                      {[listing.city, listing.country].filter(Boolean).join(', ')}
                     </h3>
                     <div className="flex items-center gap-1 ml-2">
                       <Star size={14} className="fill-black" />
@@ -545,7 +547,7 @@ export default function HousingPage() {
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedListing.title}</h2>
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin size={16} />
-                      <span>{selectedListing.city}, France</span>
+                      <span>{[selectedListing.city, selectedListing.country].filter(Boolean).join(', ')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-lg">
@@ -793,29 +795,47 @@ export default function HousingPage() {
                     />
                   </div>
 
-                  {/* City */}
+                  {/* Country */}
                   <div>
-                    <Label className="text-sm font-semibold mb-2 block">{t('city')}</Label>
+                    <Label className="text-sm font-semibold mb-2 block">País 🌍</Label>
                     <div className="grid grid-cols-4 gap-2 mb-2">
-                      {cities.slice(0, 8).map(city => (
+                      {[
+                        { name: 'Brasil', emoji: '🇧🇷' },
+                        { name: 'Portugal', emoji: '🇵🇹' },
+                        { name: 'França', emoji: '🇫🇷' },
+                        { name: 'Espanha', emoji: '🇪🇸' },
+                        { name: 'Itália', emoji: '🇮🇹' },
+                        { name: 'Alemanha', emoji: '🇩🇪' },
+                        { name: 'EUA', emoji: '🇺🇸' },
+                        { name: 'Canadá', emoji: '🇨🇦' },
+                      ].map((c) => (
                         <button
-                          key={city.name}
-                          onClick={() => setNewListing({...newListing, city: city.name})}
+                          key={c.name}
+                          onClick={() => setNewListing({ ...newListing, country: c.name })}
                           className={`p-2 rounded-xl border-2 text-center transition-all ${
-                            newListing.city === city.name
-                              ? 'border-orange-500 bg-orange-50'
-                              : 'border-gray-200 hover:border-gray-300'
+                            newListing.country === c.name ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <span className="text-lg block">{city.emoji}</span>
-                          <span className="text-xs">{city.name}</span>
+                          <span className="text-lg block">{c.emoji}</span>
+                          <span className="text-xs">{c.name}</span>
                         </button>
                       ))}
                     </div>
                     <Input
+                      value={newListing.country}
+                      onChange={(e) => setNewListing({ ...newListing, country: e.target.value })}
+                      placeholder="Outro país..."
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  {/* City */}
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">{t('city')}</Label>
+                    <Input
                       value={newListing.city}
                       onChange={(e) => setNewListing({...newListing, city: e.target.value})}
-                      placeholder={t('otherCity')}
+                      placeholder="Digite a cidade (qualquer lugar do mundo)"
                       className="rounded-xl"
                     />
                   </div>
