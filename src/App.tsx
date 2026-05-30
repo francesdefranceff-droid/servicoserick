@@ -23,6 +23,7 @@ import ServicosAdmin from "./pages/servicos/Admin";
 import { ClonedAuthProvider, clonedRoutes } from "./cloned/ClonedRoutes";
 import { AuthContext as ClonedAuthContext } from "./cloned/ClonedAuthContext";
 import IncomingCallListener from "./cloned/components/IncomingCallListener";
+import LocationBanner from "./cloned/components/LocationBanner";
 import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
 import { DebugErrorThrower } from "./components/DebugErrorThrower";
 
@@ -62,6 +63,7 @@ const App = () => (
       <Sonner />
       <IncomingCallListener />
       <AppRoutes />
+      <LocationBanner />
       <ErrorDebugPopup />
     </ClonedAuthProvider>
   </TooltipProvider>
