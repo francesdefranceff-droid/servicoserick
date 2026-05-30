@@ -369,6 +369,14 @@ const PostCard = ({ post, onChat }) => {
           </div>
         )}
       </div>
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img src={lightbox} alt="" className="max-w-full max-h-full object-contain" />
+        </div>
+      )}
     </Card>
   );
 };
