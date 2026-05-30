@@ -17,6 +17,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { CUSTOM_CATEGORY_VALUE, WORK_SERVICE_CATEGORIES, prettifyCategoryLabel } from '../lib/serviceCategories';
 import SupportChatWidget from '../components/SupportChatWidget';
 import ProfileStories from '../components/ProfileStories';
+import { setUserLocation as setSharedLocation } from '../lib/userLocation';
 
 // Local fallback store so the feed works even without auth/backend
 const LOCAL_KEY = 'cloned_feed_posts_v1';
@@ -406,15 +407,18 @@ export default function FeedPage() {
     setDetectingAddress(true);
     const finish = async (lat, lng) => {
       setPostCoords({ lat, lng });
+      let resolvedAddress = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
       try {
         const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
           headers: { 'Accept-Language': 'pt-BR,pt,en' },
         });
         const d = await r.json();
-        setPostAddress(d.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        resolvedAddress = d.display_name || resolvedAddress;
+        setPostAddress(resolvedAddress);
       } catch {
-        setPostAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        setPostAddress(resolvedAddress);
       }
+      setSharedLocation({ lat, lng, address: resolvedAddress, source: 'feed-detect' });
       setDetectingAddress(false);
     };
 
@@ -783,6 +787,24 @@ export default function FeedPage() {
         categorySlug = createdSlug || 'outros';
       }
 
+      let resolvedCoords = postCoords;
+      const resolvedAddress = postAddress.trim();
+      if (!resolvedCoords && resolvedAddress) {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(resolvedAddress)}`, {
+            headers: { 'Accept-Language': 'pt-BR,pt,en' },
+          });
+          const d = await r.json();
+          if (d?.[0]) {
+            resolvedCoords = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+            setPostCoords(resolvedCoords);
+            setSharedLocation({ ...resolvedCoords, address: d[0].display_name || resolvedAddress, source: 'feed-address' });
+          }
+        } catch {
+          /* mantém apenas o endereço textual se a geocodificação falhar */
+        }
+      }
+
       const insertPayload = {
         user_id: uid,
         title: postDescription.slice(0, 60),
@@ -790,9 +812,9 @@ export default function FeedPage() {
         photos: uploadedUrls,
         budget_range: postBudget || null,
         category_slug: categorySlug,
-        address: postAddress || null,
-        lat: postCoords?.lat ?? null,
-        lng: postCoords?.lng ?? null,
+        address: resolvedAddress || null,
+        lat: resolvedCoords?.lat ?? null,
+        lng: resolvedCoords?.lng ?? null,
         post_type: publishMode === 'offer' ? 'volunteer' : 'paid',
         status: 'open',
       };
