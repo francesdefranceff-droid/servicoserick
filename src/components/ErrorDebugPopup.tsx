@@ -498,6 +498,8 @@ export const ErrorDebugPopup: React.FC = () => {
         zIndex: 2147483600,
       };
 
+  if (!visible) return null;
+
   if (isCheckingAccess) {
     return (
       <div
