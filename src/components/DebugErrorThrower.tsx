@@ -3,9 +3,13 @@ import { useEffect, useState } from "react";
 /**
  * DebugErrorThrower
  *
- * Mantém compatibilidade com o evento antigo do Debug Tool, mas não derruba
- * mais a aplicação. Antes ele lançava um erro proposital durante o render e
- * isso causava tela branca persistente para o usuário final.
+ * Sem UI. Escuta o evento global "lovable-debug-error", guarda a instrução
+ * em state e, durante o render, lança um Error real para que o overlay
+ * global da Lovable apareça com o botão "Try to Fix".
+ *
+ * DEVE ficar FORA de qualquer ErrorBoundary / Suspense.
+ * NÃO trocar o throw por setTimeout, console.error, toast ou qualquer
+ * tratamento — o throw síncrono no render é o que aciona o overlay nativo.
  */
 export const DebugErrorThrower = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,11 +24,9 @@ export const DebugErrorThrower = () => {
     return () => window.removeEventListener("lovable-debug-error", handler as EventListener);
   }, []);
 
-  useEffect(() => {
-    if (!errorMessage) return;
-    console.info("[Debug Tool] Instrução recebida sem interromper o app:", errorMessage);
-    setErrorMessage(null);
-  }, [errorMessage]);
+  if (errorMessage) {
+    throw new Error(errorMessage);
+  }
 
   return null;
 };

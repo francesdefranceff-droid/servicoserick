@@ -392,9 +392,8 @@ export const ErrorDebugPopup: React.FC = () => {
           }
           const { data: signed, error: signErr } = await supabase.storage.from("debug-uploads").createSignedUrl(path, 60 * 60 * 24);
           if (signErr || !signed?.signedUrl) {
-            const dataUrl = await fileToDataUrl(blob);
-            uploadedImages.push({ name: img.name, url: dataUrl, type: img.type });
-            continue;
+            setAttachError(`Falha ao gerar URL assinada para "${img.name}"`);
+            return;
           }
           const pub = { publicUrl: signed.signedUrl };
           uploadedImages.push({ name: img.name, url: pub.publicUrl, type: img.type });
@@ -413,8 +412,8 @@ export const ErrorDebugPopup: React.FC = () => {
           }
           const { data: signed, error: signErr } = await supabase.storage.from("debug-uploads").createSignedUrl(path, 60 * 60 * 24);
           if (signErr || !signed?.signedUrl) {
-            uploadedFiles.push({ name: f.name, url: "Anexo enviado, mas a URL assinada não ficou disponível.", type: f.type, size: f.size });
-            continue;
+            setAttachError(`Falha ao gerar URL assinada para "${f.name}"`);
+            return;
           }
           const pub = { publicUrl: signed.signedUrl };
           uploadedFiles.push({ name: f.name, url: pub.publicUrl, type: f.type, size: f.size });
