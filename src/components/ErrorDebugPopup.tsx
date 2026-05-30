@@ -133,6 +133,30 @@ export const ErrorDebugPopup: React.FC = () => {
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
   const [minimized, setMinimized] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  // Atalho: digitar "z4" em qualquer lugar (fora de inputs) para abrir/fechar o Debug Tool
+  useEffect(() => {
+    let buffer = "";
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-2);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { buffer = ""; }, 800);
+      if (buffer === "z4") {
+        buffer = "";
+        setVisible((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const docInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -473,6 +497,8 @@ export const ErrorDebugPopup: React.FC = () => {
         height: size.h,
         zIndex: 2147483600,
       };
+
+  if (!visible) return null;
 
   if (isCheckingAccess) {
     return (
