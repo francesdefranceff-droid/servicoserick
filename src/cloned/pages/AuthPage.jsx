@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../ClonedAuthContext';
 import { Button } from '../components/ui/button';
@@ -72,6 +72,16 @@ const professionalAreas = [
 
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
+  const locationInfo = useLocation();
+  const roleFromPath = locationInfo.pathname.includes('oferecer-servicos')
+    ? 'helper'
+    : locationInfo.pathname.includes('procurar-ajuda')
+      ? 'needs_help'
+      : locationInfo.pathname.includes('oferecer-ajuda')
+        ? 'volunteer'
+        : locationInfo.pathname.includes('procurar-servicos')
+          ? 'migrant'
+          : null;
   const roleFromUrl = searchParams.get('role');
   const modeFromUrl = searchParams.get('mode');
   const nextPath = searchParams.get('next');
@@ -80,7 +90,8 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState(FLOW_CONFIG[roleFromUrl] ? roleFromUrl : 'migrant');
+  const initialRole = FLOW_CONFIG[roleFromUrl] ? roleFromUrl : (FLOW_CONFIG[roleFromPath] ? roleFromPath : 'migrant');
+  const [role, setRole] = useState(initialRole);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   
