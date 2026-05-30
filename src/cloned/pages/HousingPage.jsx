@@ -547,7 +547,7 @@ export default function HousingPage() {
                     <h2 className="text-2xl font-bold text-gray-900 mb-1">{selectedListing.title}</h2>
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin size={16} />
-                      <span>{selectedListing.city}, France</span>
+                      <span>{[selectedListing.city, selectedListing.country].filter(Boolean).join(', ')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-lg">
