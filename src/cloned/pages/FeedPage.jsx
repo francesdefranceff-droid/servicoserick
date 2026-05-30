@@ -215,7 +215,13 @@ const PostCard = ({ post, onChat }) => {
               <VerifiedBadge size={14} />
             </button>
             {post.title && <p className="text-xs font-medium text-gray-900 mb-1">{post.title}</p>}
-            <p className="text-xs text-gray-800 leading-relaxed">{description}</p>
+            <p
+              className={`text-xs text-gray-800 leading-relaxed cursor-pointer ${expanded ? '' : 'line-clamp-3'}`}
+              onClick={() => setExpanded((v) => !v)}
+              title={expanded ? 'Clique para recolher' : 'Clique para expandir'}
+            >
+              {description}
+            </p>
 
             {images.length > 0 && (
               <div className={`mt-2 mb-2 ${images.length === 1 ? '' : 'grid grid-cols-2 gap-2'}`}>
@@ -223,14 +229,15 @@ const PostCard = ({ post, onChat }) => {
                   <div
                     key={idx}
                     data-testid={`post-card-img-${idx}`}
-                    className="relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 aspect-square"
+                    className={`relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 cursor-zoom-in ${expanded ? '' : 'aspect-square'}`}
+                    onClick={() => setLightbox(img)}
                   >
                     <img
                       src={img}
                       alt={`Mídia ${idx + 1}`}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover"
+                      className={`w-full ${expanded ? 'h-auto object-contain' : 'h-full object-cover'}`}
                       style={{ imageRendering: 'auto' }}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
