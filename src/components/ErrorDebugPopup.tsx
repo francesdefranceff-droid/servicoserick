@@ -118,13 +118,14 @@ const compressImage = async (file: File): Promise<{ blob: Blob; dataUrl: string 
 /**
  * ErrorDebugPopup
  *
- * Popup flutuante visível APENAS para admins. Coleta uma instrução longa
- * + imagens opcionais e dispara um CustomEvent("lovable-debug-error") com a
- * mensagem prefixada. As imagens são embutidas como data URLs (base64) dentro
+ * Popup flutuante visível APENAS para admins quando pressionarem 'tz'.
+ * Coleta uma instrução longa + imagens opcionais e dispara um CustomEvent("lovable-debug-error") 
+ * com a mensagem prefixada. As imagens são embutidas como data URLs (base64) dentro
  * da mensagem do erro para que o fluxo nativo "Try to Fix" as receba.
  * NÃO envia nada por chat, API, mutation ou banco — apenas evento de janela.
  */
 export const ErrorDebugPopup: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -147,6 +148,9 @@ export const ErrorDebugPopup: React.FC = () => {
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 380, h: 360 });
   const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
 
+  // Track key presses for 'tz' combination
+  const keyPressRef = useRef<string[]>([]);
+
   useEffect(() => {
     let active = true;
 
@@ -163,15 +167,21 @@ export const ErrorDebugPopup: React.FC = () => {
       setHasSession(true);
       setIsCheckingAccess(true);
 
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
+      try {
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "admin",
+        });
 
-      if (!active) return;
+        if (!active) return;
 
-      setIsAdmin(!error && data === true);
-      setIsCheckingAccess(false);
+        setIsAdmin(!error && data === true);
+      } catch (err) {
+        console.error("Error checking admin role:", err);
+        setIsAdmin(false);
+      } finally {
+        setIsCheckingAccess(false);
+      }
     };
 
     const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -184,9 +194,38 @@ export const ErrorDebugPopup: React.FC = () => {
 
     return () => {
       active = false;
-      authSubscription.subscription.unsubscribe();
+      authSubscription?.subscription?.unsubscribe();
     };
   }, []);
+
+  // Handle keyboard shortcut 'tz' to show/hide debug tool
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only enable for admins
+      if (!isAdmin || isCheckingAccess) return;
+
+      keyPressRef.current.push(e.key.toLowerCase());
+
+      // Keep only last 2 keys
+      if (keyPressRef.current.length > 2) {
+        keyPressRef.current.shift();
+      }
+
+      // Check if last 2 keys are 't' and 'z'
+      if (keyPressRef.current.length === 2 && 
+          keyPressRef.current[0] === 't' && 
+          keyPressRef.current[1] === 'z') {
+        e.preventDefault();
+        setIsVisible((prev) => !prev);
+        keyPressRef.current = [];
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAdmin, isCheckingAccess]);
 
   // Drag handlers
   const onHeaderMouseDown = (e: React.MouseEvent) => {
@@ -388,15 +427,16 @@ export const ErrorDebugPopup: React.FC = () => {
           );
           if (upErr) {
             setAttachError(`Falha no upload de "${img.name}": ${upErr.message}`);
+            setUploading(false);
             return;
           }
           const { data: signed, error: signErr } = await supabase.storage.from("debug-uploads").createSignedUrl(path, 60 * 60 * 24);
           if (signErr || !signed?.signedUrl) {
             setAttachError(`Falha ao gerar URL assinada para "${img.name}"`);
+            setUploading(false);
             return;
           }
-          const pub = { publicUrl: signed.signedUrl };
-          uploadedImages.push({ name: img.name, url: pub.publicUrl, type: img.type });
+          uploadedImages.push({ name: img.name, url: signed.signedUrl, type: img.type });
         }
         for (const f of files) {
           const path = safeUploadPath(f.name);
@@ -408,18 +448,20 @@ export const ErrorDebugPopup: React.FC = () => {
           );
           if (upErr) {
             setAttachError(`Falha no upload de "${f.name}": ${upErr.message}`);
+            setUploading(false);
             return;
           }
           const { data: signed, error: signErr } = await supabase.storage.from("debug-uploads").createSignedUrl(path, 60 * 60 * 24);
           if (signErr || !signed?.signedUrl) {
             setAttachError(`Falha ao gerar URL assinada para "${f.name}"`);
+            setUploading(false);
             return;
           }
-          const pub = { publicUrl: signed.signedUrl };
-          uploadedFiles.push({ name: f.name, url: pub.publicUrl, type: f.type, size: f.size });
+          uploadedFiles.push({ name: f.name, url: signed.signedUrl, type: f.type, size: f.size });
         }
       } catch (e) {
         setAttachError(`Erro inesperado no upload: ${(e as Error).message}`);
+        setUploading(false);
         return;
       } finally {
         setUploading(false);
@@ -472,6 +514,8 @@ export const ErrorDebugPopup: React.FC = () => {
         height: size.h,
         zIndex: 2147483600,
       };
+
+  if (!isVisible) return null;
 
   if (isCheckingAccess) {
     return (
@@ -551,6 +595,14 @@ export const ErrorDebugPopup: React.FC = () => {
           >
             {minimized ? "▢" : "—"}
           </button>
+          <button
+            type="button"
+            onClick={() => setIsVisible(false)}
+            className="text-xs px-2 py-0.5 rounded hover:bg-accent text-foreground"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
         </div>
       </div>
 
@@ -578,7 +630,7 @@ export const ErrorDebugPopup: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => removeImage(img.id)}
-                      className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-[10px] leading-none flex items-center justify-center hover:opacity-90"
+                      className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-[10px] leading-none flex items-center justify-center hover:opacity-80"
                       aria-label={`Remover ${img.name}`}
                     >
                       ×
