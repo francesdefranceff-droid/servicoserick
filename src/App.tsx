@@ -25,7 +25,7 @@ import { AuthContext as ClonedAuthContext } from "./cloned/ClonedAuthContext";
 import IncomingCallListener from "./cloned/components/IncomingCallListener";
 import LocationBanner from "./cloned/components/LocationBanner";
 import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
-import { DebugErrorThrower } from "./components/DebugErrorThrower";
+
 
 const AppRoutes = () => {
   const { user } = useContext(ClonedAuthContext) as { user: { role?: string } | null };
