@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import ServicesMap from '../components/ServicesMap';
 import NearbyHelpPlaces from '../components/NearbyHelpPlaces';
+import { useUserLocation } from '../lib/userLocation';
 
 // Imagens de pessoas felizes sendo ajudadas
 const HERO_IMAGES = [
@@ -43,6 +44,7 @@ const ALL_CATEGORIES = [
 
 export default function VolunteersPage() {
   const { token, user } = useContext(AuthContext);
+  const { location: sharedLocation, setManualLocation } = useUserLocation();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [showModal, setShowModal] = useState(true);
@@ -548,7 +550,7 @@ export default function VolunteersPage() {
             <MapPin size={18} className="text-primary" />
             Mapa: voluntários e pessoas que precisam de ajuda
           </h3>
-          <ServicesMap height={380} showHelpRequests={true} />
+          <ServicesMap height={380} showHelpRequests={true} userLocation={sharedLocation} />
         </div>
 
         {/* Locais de ajuda próximos (alimentação, doações) */}
