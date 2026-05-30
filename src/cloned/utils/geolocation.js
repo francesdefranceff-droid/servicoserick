@@ -122,10 +122,10 @@ export const requestLocationPermission = async (options = {}) => {
       );
     });
 
-  // 1) Tenta o navegador quando permissão já está concedida, foi explicitamente forçada,
-  //    ou o estado é desconhecido/prompt (iOS Safari não suporta Permissions API,
-  //    então cai sempre aqui — getCurrentPosition resolve null em caso de negação).
-  if (permState === 'granted' || permState === 'prompt' || permState === 'unknown' || forceBrowser) {
+  // 1) Use o navegador apenas quando a permissão JÁ está concedida ou quando foi
+  //    forçado por um gesto do usuário (clique em botão). Chamar getCurrentPosition
+  //    automaticamente sem gesto causa silêncio/timeout no Safari iOS e Chrome móvel.
+  if (permState === 'granted' || forceBrowser) {
     const browserLoc = await tryBrowserGeo();
     if (browserLoc) {
       if (showToast) toast.success('📍 Localização obtida');
