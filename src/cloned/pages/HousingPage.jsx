@@ -447,7 +447,7 @@ export default function HousingPage() {
                 <div className="space-y-1">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1">
-                      {listing.city}, France
+                      {[listing.city, listing.country].filter(Boolean).join(', ')}
                     </h3>
                     <div className="flex items-center gap-1 ml-2">
                       <Star size={14} className="fill-black" />
