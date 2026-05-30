@@ -70,6 +70,7 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
   const [requests, setRequests] = useState([]);
   const [searchJobs, setSearchJobs] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [map, setMap] = useState(null);
   const [loading, setLoading] = useState(true);
   const categoriesKey = (categories || []).filter(Boolean).join('|');
   const activeUserLocation = useMemo(() => {
@@ -130,6 +131,12 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
     return { lat: 48.8566, lng: 2.3522 };
   }, [activeUserLocation, searchJobs, helpers, requests]);
 
+  useEffect(() => {
+    if (map && center?.lat && center?.lng) {
+      map.panTo(center);
+    }
+  }, [map, center?.lat, center?.lng]);
+
   if (!apiKey || loadError) {
     return <MapFallback height={height} />;
   }
@@ -146,6 +153,8 @@ export default function ServicesMap({ height = 400, showHelpRequests = true, pos
           mapContainerStyle={{ width: '100%', height: '100%' }}
           center={center}
           zoom={12}
+          onLoad={setMap}
+          onUnmount={() => setMap(null)}
           options={{
             styles: modernMapStyle,
             disableDefaultUI: true,
