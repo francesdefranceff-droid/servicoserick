@@ -77,7 +77,7 @@ export default function AuthPage() {
     ? 'helper'
     : locationInfo.pathname.includes('procurar-ajuda')
       ? 'needs_help'
-      : locationInfo.pathname.includes('oferecer-ajuda')
+      : locationInfo.pathname.includes('oferecer-ajuda') || locationInfo.pathname.includes('ofereco-ajuda') || locationInfo.pathname.includes('sou-voluntario')
         ? 'volunteer'
         : locationInfo.pathname.includes('procurar-servicos')
           ? 'migrant'
