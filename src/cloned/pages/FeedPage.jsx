@@ -135,6 +135,8 @@ const PostCard = ({ post, onChat }) => {
   const [comments, setComments] = useState(initial.comments || []);
   const [commentText, setCommentText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
