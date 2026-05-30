@@ -729,21 +729,92 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Premium / Welcome Banner (Jataí-style) */}
-      <div className="bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-3">
-        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs sm:text-sm text-gray-800 font-medium text-center sm:text-left">
-            ✨ Bem-vindo{user?.name ? `, ${user.name.split(' ')[0]}` : ''}! Conectando você à comunidade solidária.
-          </p>
-          <Button
-            onClick={() => navigate('/housing')}
-            className="bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-full px-5 h-8 text-xs shadow-sm"
-            data-testid="banner-housing-btn"
-          >
-            🏡 {t('solidaryHousing') || 'Moradia Solidária'}
-          </Button>
+      {/* Hero Voluntário com foto real */}
+      <section className="relative overflow-hidden">
+        <img
+          src={heroVolunteersImg}
+          alt="Voluntários distribuindo alimentos e roupas para a comunidade"
+          className="absolute inset-0 w-full h-full object-cover"
+          width={1600}
+          height={896}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />
+        <div className="relative max-w-[1200px] mx-auto px-4 py-8 sm:py-12 text-white">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur border border-white/20 text-[11px] font-semibold mb-3">
+              <HandHeart size={14} /> Comunidade voluntária
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-extrabold leading-tight">
+              Olá{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
+              <br />
+              <span className="text-green-300">Doe, ofereça ou peça ajuda</span> perto de você.
+            </h1>
+            <p className="mt-2 text-sm sm:text-base text-white/90">
+              Conectamos voluntários, ONGs e quem precisa — alimentos, roupas, moradia, trabalho e apoio jurídico.
+            </p>
+
+            {/* Região */}
+            {user?.city ? (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur border border-white/20 text-xs sm:text-sm">
+                <MapPin size={14} className="text-green-300" />
+                <span>Sua região: <strong>{user.city}</strong></span>
+                <button
+                  onClick={() => { setRegionInput(user.city || ''); document.getElementById('hero-region-input')?.focus(); }}
+                  className="ml-1 underline underline-offset-2 text-white/80 hover:text-white"
+                >
+                  alterar
+                </button>
+              </div>
+            ) : (
+              <p className="mt-4 text-xs sm:text-sm text-orange-200 font-semibold">
+                📍 Para começar, conte onde você está — assim mostramos voluntários e pedidos perto de você.
+              </p>
+            )}
+
+            <form onSubmit={handleSaveRegion} className="mt-3 flex flex-col sm:flex-row gap-2 max-w-xl">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <Input
+                  id="hero-region-input"
+                  value={regionInput}
+                  onChange={(e) => setRegionInput(e.target.value)}
+                  placeholder="Sua cidade, estado ou país"
+                  className="pl-9 h-11 bg-white text-gray-900 placeholder:text-gray-400 border-0"
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={detectMyLocation}
+                disabled={savingRegion}
+                className="h-11 bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold"
+              >
+                📍 Detectar
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingRegion}
+                className="h-11 bg-green-500 hover:bg-green-600 text-white font-bold shadow"
+              >
+                Salvar região
+              </Button>
+            </form>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button onClick={() => navigate('/volunteers')} className="bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full h-9 px-4 text-xs sm:text-sm">
+                🤝 Quero ser voluntário
+              </Button>
+              <Button onClick={() => navigate('/ofereco-ajuda')} className="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full h-9 px-4 text-xs sm:text-sm">
+                💝 Ofereço ajuda
+              </Button>
+              <Button onClick={() => navigate('/housing')} className="bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 text-white font-semibold rounded-full h-9 px-4 text-xs sm:text-sm">
+                🏡 Moradia Solidária
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+
 
       {/* Filters area */}
       <div className="bg-white border-b border-gray-100">
