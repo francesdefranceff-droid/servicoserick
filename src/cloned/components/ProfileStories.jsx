@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Radio, X, Video, VideoOff, Mic, MicOff, ImagePlus, Heart, MessageCircle, Send, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import LiveIndicators from './LiveIndicators';
