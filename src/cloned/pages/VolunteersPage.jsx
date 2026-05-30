@@ -10,6 +10,7 @@ import { MessageCircle, Plus, Check, Heart, Users, Sparkles, MapPin, Image as Im
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import ServicesMap from '../components/ServicesMap';
+import NearbyHelpPlaces from '../components/NearbyHelpPlaces';
 
 // Imagens de pessoas felizes sendo ajudadas
 const HERO_IMAGES = [
