@@ -108,7 +108,7 @@ const RESOURCES_INFO = {
 };
 
 export default function HomePage() {
-  const { user, token } = useContext(AuthContext);
+  const { user, token, refreshUser } = useContext(AuthContext);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
