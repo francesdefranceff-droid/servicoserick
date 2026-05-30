@@ -43,6 +43,7 @@ function formatBytes(bytes) {
 }
 
 export default function ProfileStories({ avatarSrc, userName = 'Você' }) {
+  const navigate = useNavigate();
   const fileRef = useRef(null);
   const liveVideoRef = useRef(null);
   const liveStreamRef = useRef(null);
