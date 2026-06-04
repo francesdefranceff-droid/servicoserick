@@ -370,7 +370,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setShowCoverDialog(true)}
-              className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-textPrimary text-xs font-semibold shadow-md backdrop-blur transition"
+              className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-textPrimary text-xs font-semibold shadow-md backdrop[...]
               data-testid="edit-cover-btn"
             >
               <Camera size={14} />
@@ -397,7 +397,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => coverInputRef.current?.click()}
                   disabled={uploadingCover}
-                  className="w-full p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-primary/5 transition flex items-center gap-3 text-left disabled:opacity-50"
+                  className="w-full p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-primary/5 transition flex items-center gap-3 text-left disabled:opacity-50[...]
                 >
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {uploadingCover ? <Loader2 size={20} className="text-primary animate-spin" /> : <ImageIcon size={20} className="text-primary" />}
@@ -489,7 +489,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full shadow-lg flex items-center justify-center border-2 border-white hover:bg-primary/90 transition disabled:opacity-60"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full shadow-lg flex items-center justify-center border-2 border-white hover:bg-primary/90 transition disabled:o[...]
                   title="Alterar foto de perfil"
                   data-testid="change-avatar-btn"
                 >
@@ -577,9 +577,6 @@ export default function ProfilePage() {
                 <div className="mt-3 relative z-0 overflow-visible pb-2">
                   <ProfileStories avatarSrc={avatarSrc} userName={user?.display_name || user?.name || 'Você'} />
                 </div>
-                <p className="text-green-600 text-sm font-medium flex items-center gap-1.5 mt-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full" /> Em linha
-                </p>
               </div>
             </div>
           </div>
@@ -793,7 +790,7 @@ export default function ProfilePage() {
               </Button>
             </div>
             <div className="mt-2">
-              <ServicesMap height={320} showHelpRequests={true} postTypeFilter={profilePostTypeFilter} categories={interestCategories} radiusKm={radiusKm} userLocation={sharedLocation || { lat: user?.lat, lng: user?.lng }} userId={user?.id} showSearchJobs={!isVolunteer} />
+              <ServicesMap height={320} showHelpRequests={true} postTypeFilter={profilePostTypeFilter} categories={interestCategories} radiusKm={radiusKm} userLocation={sharedLocation || { lat: u[...]
             </div>
           </div>
 
@@ -1146,8 +1143,8 @@ function ChangePasswordCard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast.error('A senha deve ter no mínimo 6 caracteres');
+    if (newPassword.length < 8) {
+      toast.error('A senha deve ter no mínimo 8 caracteres');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -1195,4 +1192,3 @@ function ChangePasswordCard() {
     </div>
   );
 }
-
