@@ -1,35 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { SEOHead } from '@/components/SEOHead';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { SEOHead } from "@/components/SEOHead";
+import {
+  getCurrentLocalUser,
+  signInLocal,
+  signUpLocal,
+  signOutLocal,
+} from "@/lib/localAuth";
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/admin');
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/admin');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const currentUser = getCurrentLocalUser();
+    if (currentUser) {
+      navigate("/admin");
+    }
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,44 +31,30 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      if (password.length < 6) {
+        throw new Error("A senha deve ter pelo menos 6 caracteres.");
+      }
+
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-
+        await signInLocal(email, password);
         toast({
-          title: 'Sucesso',
-          description: 'Login realizado com sucesso',
+          title: "Sucesso",
+          description: "Login realizado com sucesso",
         });
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin`,
-          },
-        });
-
-        if (error) throw error;
-
-        if (!data.session) {
-          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInError) throw signInError;
-        }
-
+        await signUpLocal(email, password);
         toast({
-          title: 'Sucesso',
-          description: 'Conta criada com sucesso',
+          title: "Sucesso",
+          description: "Conta criada com sucesso",
         });
       }
+
+      navigate("/admin");
     } catch (error: any) {
       toast({
-        title: 'Erro',
+        title: "Erro",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -83,19 +63,20 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <SEOHead 
-        title={isLogin ? 'Entrar' : 'Cadastrar'}
-        description={isLogin ? 'Entre para gerenciar seus eventos e inscrições' : 'Crie uma conta para gerenciar eventos e se inscrever em próximos eventos'}
+      <SEOHead
+        title={isLogin ? "Entrar" : "Cadastrar"}
+        description={isLogin ? "Entre para gerenciar seus eventos" : "Crie uma conta para gerenciar eventos"}
       />
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="text-4xl font-normal text-[#1A1A1A] tracking-[-0.02em]">
-            {isLogin ? 'Entrar' : 'Cadastrar'}
+            {isLogin ? "Entrar" : "Cadastrar"}
           </h2>
           <p className="mt-2 text-sm text-[#1A1A1A] opacity-50">
-            {isLogin ? 'Entre para gerenciar eventos' : 'Crie uma conta para gerenciar eventos'}
+            {isLogin ? "Entre para gerenciar eventos" : "Crie uma conta para gerenciar eventos"}
           </p>
         </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Input
@@ -107,6 +88,7 @@ const Auth = () => {
               className="border-[#1A1A1A] text-[#1A1A1A]"
             />
           </div>
+
           <div>
             <Input
               type="password"
@@ -117,19 +99,21 @@ const Auth = () => {
               className="border-[#1A1A1A] text-[#1A1A1A]"
             />
           </div>
+
           <Button
             type="submit"
             disabled={loading}
             className="w-full bg-[#1A1A1A] text-white hover:bg-opacity-90"
           >
-            {loading ? 'Carregando...' : isLogin ? 'Entrar' : 'Cadastrar'}
+            {loading ? "Carregando..." : isLogin ? "Entrar" : "Cadastrar"}
           </Button>
         </form>
+
         <button
           onClick={() => setIsLogin(!isLogin)}
           className="text-sm text-[#1A1A1A] hover:opacity-70 transition-opacity"
         >
-          {isLogin ? "Não tem uma conta? Cadastre-se" : 'Já tem uma conta? Entrar'}
+          {isLogin ? "Não tem uma conta? Cadastre-se" : "Já tem uma conta? Entrar"}
         </button>
       </div>
     </div>
